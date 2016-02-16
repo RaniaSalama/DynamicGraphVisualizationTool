@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="Dynamic Graph Visualization">
-        <wb-resource deploy-path="/" source-path="/WebContent"/>
+    <wb-module deploy-name="Dynamic Graph Visualization Juno">
+        <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <wb-resource deploy-path="/WEB-INF/classes" source-path="/lib"/>
-        <property name="context-root" value="Dynamic_Graph_Visualization"/>
-        <property name="java-output-path" value="/Dynamic Graph Visualization/build/classes"/>
+        <property name="context-root" value="Dynamic_Graph_Visualization_Juno"/>
+        <property name="java-output-path" value="/Dynamic Graph Visualization Juno/build/classes"/>
     </wb-module>
 </project-modules>

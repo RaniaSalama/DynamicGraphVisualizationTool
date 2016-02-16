@@ -1,4 +1,5 @@
-function colors_nodes = visualize_map(file_graph_1, file_graph_2, k, r, measure_method)
+function [colors_nodes, distortion_values] = visualize_map(file_graph_1, file_graph_2, k, r, measure_method)
+
 G1 = load(file_graph_1);
 G2 = load(file_graph_2);
 
@@ -21,6 +22,7 @@ F = spdiags(sum(M,2),0, nv, nv);
 G = spdiags(sum(N,2),0, nv, nv);
 
 L1 = get_laplacian(M, laplacian_method_1);
+k = min(k, rank(full(L1)));
 [e1, v1] = eigs(L1, F, k, -1e-7);
 [v1, order] = sort(diag(v1),'ascend');
 e1 = e1(:,order);
@@ -52,6 +54,7 @@ sh = S(1:r);
 sl = S(k-r+1:k);
 
 distortion_values = wh.^2;
+
 colors_nodes = repmat('#000000',[nv 1]);
 colors = jet(100);
 for k=1:nv
