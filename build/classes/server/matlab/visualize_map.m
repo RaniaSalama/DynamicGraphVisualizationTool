@@ -1,8 +1,7 @@
-function [colors_nodes, distortion_values] = visualize_map(file_graph_1, file_graph_2, k, r, measure_method)
+function [colors_nodes, distortion_values] = visualize_map(G1, G2, k, r, measure_method)
 
-G1 = load(file_graph_1);
-G2 = load(file_graph_2);
-
+%G1 = load(file_graph_1);
+%G2 = load(file_graph_2);
 % get number of nodes as the max node id
 nv = max(max(G1(:,1))); 
 nv = max(max(nv, G1(:,2)));

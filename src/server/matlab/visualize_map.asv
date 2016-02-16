@@ -1,7 +1,8 @@
-function [colors_nodes, distortion_values] = visualize_map(G1, G2, k, r, measure_method)
+function [colors_nodes, distortion_values] = visualize_map(file_graph_1, file_graph_2, k, r, measure_method)
 
-%G1 = load(file_graph_1);
-%G2 = load(file_graph_2);
+G1 = load(file_graph_1);
+G2 = load(file_graph_2);
+
 % get number of nodes as the max node id
 nv = max(max(G1(:,1))); 
 nv = max(max(nv, G1(:,2)));
@@ -20,7 +21,7 @@ laplacian_method_2 = 'standard';
 F = spdiags(sum(M,2),0, nv, nv);
 G = spdiags(sum(N,2),0, nv, nv);
 
-L1 = get_laplacian(M, laplacian_method_1);
+L1 = get_laplacian(M, laplaian_method_1);
 k = min(k, rank(full(L1)));
 [e1, v1] = eigs(L1, F, k, -1e-7);
 [v1, order] = sort(diag(v1),'ascend');

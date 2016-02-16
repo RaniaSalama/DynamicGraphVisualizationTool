@@ -9,7 +9,8 @@ var DIV_WIDTH = 500; // graph 1 and graph 2 div width
 var DIV_HEIGHT = 500; // graph 1 and graph 2 div height
 // URL of the Java servlet
 var GRAPH_SERVLET_URL = "http://localhost:8080/Dynamic_Graph_Visualization_Juno/GraphServlet?";
-var MAX_NV = 50;
+var MAX_NV = 50; // if the graph has nodes less than MAX_NV, then draw the
+					// whole graph
 
 var graph1_data; // graph 1 content
 var graph2_data; // graph 2 content
@@ -209,8 +210,8 @@ function drawGraph(links, svg, div_name) {
 }
 
 /**
- * This function is called when user press run to call the servlet and run the
- * Matlab code
+ * This function is called when the user presses run to call the servlet and run
+ * the Matlab code
  */
 function colorGraph() {
 	// call the servlet to calculate the distortion colors
@@ -225,7 +226,7 @@ function colorGraph() {
 	}
 	http.open("POST", url, true);
 
-	//Send the proper header information along with the request
+	// Send the proper header information along with the request
 	http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	http.setRequestHeader("Content-length", params.length);
 	http.setRequestHeader("Connection", "close");
@@ -247,8 +248,7 @@ function colorGraph() {
 
 		}
 	};
-	http.send(params);
-
+	http.send(params); // send the paramters
 }
 
 /**

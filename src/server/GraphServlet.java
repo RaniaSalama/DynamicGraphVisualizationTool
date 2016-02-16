@@ -1,7 +1,6 @@
 package server;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -18,6 +17,8 @@ import matlabcontrol.MatlabInvocationException;
 import matlabcontrol.MatlabProxy;
 import matlabcontrol.MatlabProxyFactory;
 import matlabcontrol.MatlabProxyFactoryOptions;
+import matlabcontrol.extensions.MatlabNumericArray;
+import matlabcontrol.extensions.MatlabTypeConverter;
 
 /**
  * Servlet implementation class GraphServlet
@@ -29,8 +30,6 @@ public class GraphServlet extends HttpServlet {
 			false, false };
 	// basepath for storing the two graphs
 	private static String basePath = "";
-	private static String graph1File = "\\graph_1.csv";
-	private static String graph2File = "\\graph_2.csv";
 	// MATLAB fiel to run
 	private static final String MATLAB_FILE = "server/matlab/visualize_map.m";
 	// proxy used to run MATLAB code
@@ -42,6 +41,21 @@ public class GraphServlet extends HttpServlet {
 	private static final int MAX_NODES = 30;
 	// Max overlapping nodes between regions
 	private static final double MAX_OVERLAP = 0.7;
+
+	// graph1 edges values
+	private static double[][] graph1;
+	// graph2 edges
+	private static double[][] graph2;
+
+	// store previous parameters to re-use the results
+	private static double[][] prev_graph1;
+	private static double[][] prev_graph2;
+	private static int prev_k;
+	private static String prev_measure;
+	private static String[] prev_nodes_colors;
+
+	private HashMap<Integer, String[]> graph1Results;
+	private HashMap<Integer, String[]> graph2Results;
 
 	/**
 	 * @see HttpServlet#HttpServlet()
@@ -61,22 +75,49 @@ public class GraphServlet extends HttpServlet {
 		}
 	}
 
-	// given graph edges, write the data to the desired output file
-	public static void writeGraph(String data, String outputFile) {
-		PrintWriter out = null;
-		try { // '-' is the delimiter used when sending graph edges
-			String[] edges = data.split("-");
-			out = new PrintWriter(new FileWriter(outputFile));
-			for (String edge : edges) {
-				if(edge.startsWith(","))
-					edge = edge.substring(1);
-				out.print(edge);
+	// given graph edges string format, load them into graphs matrix
+	public static void loadGraph(String data, int type) {
+		// '-' is the delimiter used when sending graph edges
+		String[] edges = data.split("-");
+		if (type == 1)
+			graph1 = new double[edges.length][2];
+		else
+			graph2 = new double[edges.length][2];
+		int index = 0;
+		for (String edge : edges) {
+			if (edge.startsWith(","))
+				edge = edge.substring(1);
+			edge = edge.trim();
+			if (edge.length() == 0)
+				continue;
+			String[] nodes = edge.split(",");
+			if (type == 1) {
+				graph1[index][0] = Integer.parseInt(nodes[0]);
+				graph1[index][1] = Integer.parseInt(nodes[1]);
+			} else {
+				graph2[index][0] = Integer.parseInt(nodes[0]);
+				graph2[index][1] = Integer.parseInt(nodes[1]);
 			}
-		} catch (IOException ex) {
-
-		} finally {
-			out.close();
+			index++;
 		}
+
+	}
+
+	/**
+	 * Compare whether the two graphs are similar or not
+	 * @param graph1 graph1 edges
+	 * @param graph2 graph2 edges
+	 * @return true if the graphs are the same, otherwise return false
+	 */
+	public boolean compareGraphs(double[][] graph1, double[][] graph2) {
+		if (graph1 == null || graph2 == null)
+			return false;
+		for (int i = 0; i < graph1.length; i++) {
+			if ((graph1[i][0] != graph2[i][0])
+					|| (graph1[i][1] != graph2[i][1]))
+				return false;
+		}
+		return true;
 	}
 
 	/**
@@ -96,9 +137,6 @@ public class GraphServlet extends HttpServlet {
 			} catch (URISyntaxException e) {
 				e.printStackTrace();
 			}
-			// modify the graphs paths to point to the basepath
-			graph1File = basePath + graph1File;
-			graph2File = basePath + graph2File;
 		}
 		PrintWriter out = response.getWriter();
 		String parameters = "";
@@ -114,13 +152,11 @@ public class GraphServlet extends HttpServlet {
 			if (isFile[index]) {
 				if (isFirstFile) { // first graph
 					isFirstFile = false;
-					writeGraph(parameters, graph1File); // write data to graph1
-														// file
-					matlabParameters[index] = graph1File;
+					loadGraph(parameters, 1); // write data to graph1
+												// file
 				} else { // second graph
-					writeGraph(parameters, graph2File); // write data to graph2
-														// file
-					matlabParameters[index] = graph2File;
+					loadGraph(parameters, 2); // write data to graph2
+												// file
 				}
 			} else {
 				matlabParameters[index] = parameters;
@@ -135,39 +171,73 @@ public class GraphServlet extends HttpServlet {
 				MatlabProxyFactory factory = new MatlabProxyFactory(options);
 				proxy = factory.getProxy();
 			}
-			
-			// add graphs path to the MATLAB environment
+			if (compareGraphs(graph1, prev_graph1)
+					&& compareGraphs(graph2, prev_graph2)
+					&& prev_k == Integer.parseInt(matlabParameters[2])
+					&& prev_measure.equalsIgnoreCase(matlabParameters[3])) {
+				// if same graph with same parameters but different regions
+				// re-use previous results
+				int regionSelector = Integer.parseInt(matlabParameters[4]);
+				String[] graph1ResultsRegion = graph1Results
+						.get(regionSelector);
+				String[] graph2ResultsRegion = graph2Results
+						.get(regionSelector);
+				
+				for (int i = 0; i < prev_nodes_colors.length; i++) {
+					out.print(prev_nodes_colors[i] + ","); // get the nodes colors
+				}
+				// Write selected regions to the response
+				out.print("_");
+				for (int i = 0; i < graph1ResultsRegion.length; i++) {
+					out.print(graph1ResultsRegion[i] + "-"); // get the nodes
+																// colors
+				}
+				out.print("_");
+				for (int i = 0; i < graph2ResultsRegion.length; i++) {
+					out.print(graph2ResultsRegion[i] + "-"); // get the nodes
+																// colors
+				}
+				return;
+			}
+			// add code path to the MATLAB environment
 			proxy.eval("addpath('" + basePath + "')");
-			Object[] args = new Object[5];
-			args[0] = (Object) matlabParameters[0]; // graph 1 path
-			args[1] = (Object) matlabParameters[1]; // graph 2 path
-			args[2] = (Object) Integer.parseInt(matlabParameters[2]); // k
-			args[3] = (Object) 1; // r fixed
-			args[4] = (Object) matlabParameters[3]; // measure
-			Object[] results = proxy.returningFeval("visualize_map", 2, args);
-			String[] nodes_colors = (String[]) results[0];
+			// store the graphs in the MATLAB format
+			MatlabTypeConverter processor = new MatlabTypeConverter(proxy);
+			processor.setNumericArray("G1",
+					new MatlabNumericArray(graph1, null));
+			processor.setNumericArray("G2",
+					new MatlabNumericArray(graph2, null));
+			// run the visualize_map code
+			proxy.eval("[nodes_colors, nodes_values] = visualize_map(G1,G2,"
+					+ Integer.parseInt(matlabParameters[2]) + ",1,'"
+					+ matlabParameters[3] + "');");
+
+			String[] nodes_colors = (String[]) proxy
+					.getVariable("nodes_colors");
 			for (int i = 0; i < nodes_colors.length; i++) {
 				out.print(nodes_colors[i] + ","); // get the nodes colors
 			}
-			double[] nodes_values = (double[]) results[1];
+			double[] nodes_values = (double[]) proxy
+					.getVariable("nodes_values");
+			// Load graph2
+			RegionSelector regionsGraph2 = new RegionSelector(nodes_values,
+					graph2);
+			// Select top-region_num from graph2 results
+			graph2Results = regionsGraph2.getRegions(REGION_NUM, MAX_NODES,
+					MAX_OVERLAP);
+
 			// Load graph1
 			RegionSelector regionsGraph1 = new RegionSelector(nodes_values,
-					graph1File);
-			// Select top-region_num from graph1 results
-			HashMap<Integer, String[]> graph1Results = regionsGraph1
-					.getRegions(REGION_NUM, MAX_NODES, MAX_OVERLAP);
+					graph1);
+			// Select from graph1 same nodes as graph2 but with their new edges
+			// in graph1
+			graph1Results = regionsGraph1.getMapping(graph2Results);
 
-			//Load graph2
-			RegionSelector regionsGraph2 = new RegionSelector(nodes_values,
-					graph2File);
-			// Select from graph2 same nodes as graph1 but with their new edges in graph2
-			HashMap<Integer, String[]> graph2Results = regionsGraph2.getMapping(graph1Results);
-			
 			// Select the region specified by the user
 			int regionSelector = Integer.parseInt(matlabParameters[4]);
 			String[] graph1ResultsRegion = graph1Results.get(regionSelector);
 			String[] graph2ResultsRegion = graph2Results.get(regionSelector);
-			// Write selected regions to the response 
+			// Write selected regions to the response
 			out.print("_");
 			for (int i = 0; i < graph1ResultsRegion.length; i++) {
 				out.print(graph1ResultsRegion[i] + "-"); // get the nodes colors
@@ -175,7 +245,14 @@ public class GraphServlet extends HttpServlet {
 			out.print("_");
 			for (int i = 0; i < graph2ResultsRegion.length; i++) {
 				out.print(graph2ResultsRegion[i] + "-"); // get the nodes colors
+
 			}
+			// store the current results for checking next time
+			prev_graph1 = graph1;
+			prev_graph2 = graph2;
+			prev_k = Integer.parseInt(matlabParameters[2]);
+			prev_measure = matlabParameters[3];
+			prev_nodes_colors = nodes_colors;
 			// proxy.disconnect();
 		} catch (MatlabInvocationException ex) {
 			out.println(ex.getMessage());
