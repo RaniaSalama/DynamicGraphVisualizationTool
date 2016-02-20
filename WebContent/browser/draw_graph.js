@@ -77,7 +77,7 @@ function loadGraphFile(evt, svg, div_name) {
 		var reader = new FileReader();
 		reader.onload = function(e) {
 			var edges = e.target.result.split('\n');
-			var nodeIDs = {};
+			var nodeIDs = new Set();
 			var file_content = [];
 			var links = []; // Links of the graph.
 			for ( var i = 0; i < edges.length; i++) {
@@ -87,16 +87,12 @@ function loadGraphFile(evt, svg, div_name) {
 				link['target'] = edge[1];
 				links.push(link);
 				// Count number of nodes in the graph.
-				if (!nodeIDs[edge[0]]) {
-					nodeIDs[edge[0]] = true;
-				}
-				if (!nodeIDs[edge[1]]) {
-					nodeIDs[edge[1]] = true;
-				}
+				nodeIDs.add(edge[0]);
+				nodeIDs.add(edge[1]);
 				file_content.push(edges[i] + "-");
 			}
 			// Number of nodes in the graph.
-			num_nodes = Object.keys(nodeIDs).length;
+			num_nodes = nodeIDs.size;
 			if (num_nodes < MAX_NUM_NODES) {
 				drawGraph(links, svg, div_name);
 			}

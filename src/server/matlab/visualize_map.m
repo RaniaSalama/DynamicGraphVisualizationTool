@@ -1,11 +1,11 @@
 %{
-% visualize_map compute the distortion values and nodes colors for each node in G1 and G2
+% visualize_map computes the distortion values and nodes colors for each node in G1 and G2
 % highlighting the distortion between the two graphs.
 % The method parameters are:
 % G1 is the first graph in the following format node1,node2,edge_value.
 % G2 is the second graph in the following format node1,node2,edge_value.
 % k is the smooth parameter.
-% r is the number of singular values and vectors computed.
+% r is the number of singular values and vectors computed, which corresponds to the number of distortion areas to return.
 % measure_method is the distortion measure.
 % The method outputs are:
 % colors_nodes is a vector nx1 where each entry is a color for each node of the graphs.
@@ -24,7 +24,7 @@ M = M + M';
 N = N + N';
 
 % Calculate F and G where F and G are a diagonal matrix where each entry represents the
-% degree of the node of M and N respectively. 
+% degree of the nodes of M and N respectively. 
 F = spdiags(sum(M,2),0, nv, nv);
 G = spdiags(sum(N,2),0, nv, nv);
 
@@ -55,6 +55,7 @@ elseif strcmp(measure_method, 'conformal-based') == 1
     [V, S] = eig(R, E);
     [S, order] = sort(diag(S), 'descend');
     V = V(:, order);
+    % r number of singular vectors and values to return.
     V = [0;V(:,1:r)];
     k = 1;
 end

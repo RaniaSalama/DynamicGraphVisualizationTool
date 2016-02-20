@@ -56,16 +56,36 @@ public class GraphServlet extends HttpServlet {
   private HashMap<Integer, String[]> graph2Results = null;
 
   /**
-   * Servlet constructor initializes the MATLAB proxy.
+   * Servlet constructor initializes the MATLAB proxy and sets the MATLAB path.
+   * 
+   * @throws MatlabConnectionException
+   * @throws URISyntaxException.
    */
-  public GraphServlet() throws MatlabConnectionException {
+  public GraphServlet() throws MatlabConnectionException, URISyntaxException {
     super();
+    runMatlabCode();
+  }
+
+  /**
+   * runMatlabCode initializes the MATLAB proxy and sets the basepath to MATLAB code path.
+   * 
+   * @throws MatlabConnectionException.
+   * @throws URISyntaxException.
+   */
+  public void runMatlabCode() throws MatlabConnectionException, URISyntaxException {
     if (proxy == null) { // Initialize MATLAB proxy.
       MatlabProxyFactoryOptions options =
           new MatlabProxyFactoryOptions.Builder().setUsePreviouslyControlledSession(true)
               .setHidden(true).setMatlabLocation(null).build();
       proxy = new MatlabProxyFactory(options).getProxy();
     }
+    String[] matlabFields = MATLAB_FILE.split("/");
+    String matlabFilename = matlabFields[2];
+    // Set the basepath to the MATLAB code path.
+    basePath =
+        new File(GraphServlet.class.getClassLoader().getResource(MATLAB_FILE).toURI())
+            .getAbsolutePath();
+    basePath = basePath.substring(0, basePath.indexOf(matlabFilename));
   }
 
   /**
@@ -119,18 +139,6 @@ public class GraphServlet extends HttpServlet {
    */
   protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    if (basePath.length() == 0) { // If we didn't set the basepath yet.
-      try { // Set the basepath to the same as MATLAB code path.
-        String[] matlabFields = MATLAB_FILE.split("/");
-        String matlabFilename = matlabFields[2];
-        basePath =
-            new File(GraphServlet.class.getClassLoader().getResource(MATLAB_FILE).toURI())
-                .getAbsolutePath();
-        basePath = basePath.substring(0, basePath.indexOf(matlabFilename));
-      } catch (URISyntaxException e) {
-        e.printStackTrace();
-      }
-    }
     PrintWriter out = response.getWriter();
     String parameters = "";
     Enumeration<String> keys = request.getParameterNames();
