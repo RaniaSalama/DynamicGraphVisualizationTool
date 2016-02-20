@@ -1,40 +1,39 @@
 /**
  * Original code for drawing graph is taken from http://bl.ocks.org/d3noob and
- * modified by Rania Ibrahim
+ * modified by Rania Ibrahim.
  */
 
-var GRAPH1_DIV_NAME = "#graph_1"; // graph 1 div name
-var GRAPH2_DIV_NAME = "#graph_2"; // graph 2 div name
-var DIV_WIDTH = 500; // graph 1 and graph 2 div width
-var DIV_HEIGHT = 500; // graph 1 and graph 2 div height
-// URL of the Java servlet
+var GRAPH1_DIV_NAME = "#graph_1"; // graph 1 div name.
+var GRAPH2_DIV_NAME = "#graph_2"; // graph 2 div name.
+var DIV_WIDTH = 500; // graph 1 and graph 2 div width.
+var DIV_HEIGHT = 500; // graph 1 and graph 2 div height.
+// URL of the Java servlet.
 var GRAPH_SERVLET_URL = "http://localhost:8080/Dynamic_Graph_Visualization_Juno/GraphServlet?";
-var MAX_NV = 50; // if the graph has nodes less than MAX_NV, then draw the
-					// whole graph
-
-var graph1_data; // graph 1 content
-var graph2_data; // graph 2 content
-var svg1; // Drawing object for graph 1
-var svg2; // Drawing object for graph 2
-var nv; // Number of nodes in the graph
-var k; // value of k parameter
-var measure; // value of the distortion measure
-var graph1_x = {}; // x position of graph 1
-var graph1_y = {}; // y position of graph 1
-var region; // stores the number of region to return, 1 means return the most
-// highest distortion region
-var colors; // stores the colors of the nodes
-var prev_region; // re-draw if the user selected a different region
-var firstDraw; // whether it is first time to draw the graph
+var MAX_NUM_NODES = 50; // If the graph has nodes less than MAX_NUM_NODES, then
+// draw the whole graph.
+var graph1_data; // graph 1 content.
+var graph2_data; // graph 2 content.
+var svg1; // Drawing object for graph 1.
+var svg2; // Drawing object for graph 2.
+var num_nodes; // Number of nodes in the graph.
+var k; // Value of k parameter.
+var measure; // Value of the distortion measure.
+var graph1_x = {}; // x position of graph 1.
+var graph1_y = {}; // y position of graph 1.
+var region; // Stores the number of region to return, 1 means return the most
+// highest distortion region.
+var colors; // Stores the colors of the nodes.
+var prev_region; // Re-draw if the user selected a different region.
+var firstDraw; // Whether it is first time to draw the graph.
 
 /**
  * This function is called to initialize the graphs when a different graph file
- * is selected
+ * is selected.
  */
 function initializeGraphs(type) {
-	if (type == 1) {// initialize graph 1
+	if (type == 1) {// Initialize graph 1.
 		graph1_x = {};
-	} else {// initialize graph 2
+	} else {// Initialize graph 2.
 		graph1_y = {};
 	}
 	colors = [];
@@ -45,60 +44,60 @@ function initializeGraphs(type) {
 
 /**
  * This function is called when the user chooses graph1's file. It draws the
- * graph according to the specified file
+ * graph according to the specified file.
  */
 function readGraph1File(evt) {
-	// when the user chooses a different graph, then clear graph 1 data and
-	// drawing
+	// When the user chooses a different graph, then clear graph 1 data and
+	// drawing.
 	initializeGraphs(1);
-	var graph1_filename = evt.target.files[0];
-	// load graph 1 data and draw graph 1 if its number of nodes is less than
-	// MAX_NV
-	loadGraphFile(graph1_filename, svg1, GRAPH1_DIV_NAME);
+	// Load graph 1 data and draw graph 1 if its number of nodes is less than
+	// MAX_NUM_NODES.
+	loadGraphFile(evt, svg1, GRAPH1_DIV_NAME);
 }
 
 /**
  * This function is called when the user chooses graph2's file. It draws the
- * graph according to the specified file
+ * graph according to the specified file.
  */
 function readGraph2File(evt) {
-	// when the user chooses a different graph, then clear graph 2 data and
-	// drawing
+	// When the user chooses a different graph, then clear graph 2 data and
+	// drawing.
 	initializeGraphs(2);
-	var graph2_filename = evt.target.files[0];
-	// load graph 2 data and draw graph 2 if its number of nodes is less than
-	// MAX_NV
-	loadGraphFile(graph2_filename, svg2, GRAPH2_DIV_NAME);
+	// Load graph 2 data and draw graph 2 if its number of nodes is less than
+	// MAX_NUM_NODES.
+	loadGraphFile(evt, svg2, GRAPH2_DIV_NAME);
 }
 
 /**
- * This function loads the graph file
+ * This function loads the graph file.
  */
-function loadGraphFile(file, svg, div_name) {
-	var links = []; // links of the graph
-
-	if (file) { // if file exist
+function loadGraphFile(evt, svg, div_name) {
+	var file = evt.target.files[0];
+	if (file) { // If file exist.
 		var reader = new FileReader();
 		reader.onload = function(e) {
-			var contents = e.target.result;
-			var edges = contents.split('\n');
-			var nodesIDs = {};
+			var edges = e.target.result.split('\n');
+			var nodeIDs = {};
 			var file_content = [];
+			var links = []; // Links of the graph.
 			for ( var i = 0; i < edges.length; i++) {
 				var edge = edges[i].split(',');
 				var link = {};
 				link['source'] = edge[0];
 				link['target'] = edge[1];
 				links.push(link);
-				// Count number of nodes in the graph
-				if (!nodesIDs[edge[0]])
-					nodesIDs[edge[0]] = true;
-				if (!nodesIDs[edge[1]])
-					nodesIDs[edge[1]] = true;
+				// Count number of nodes in the graph.
+				if (!nodeIDs[edge[0]]) {
+					nodeIDs[edge[0]] = true;
+				}
+				if (!nodeIDs[edge[1]]) {
+					nodeIDs[edge[1]] = true;
+				}
 				file_content.push(edges[i] + "-");
 			}
-			nv = Object.keys(nodesIDs).length; // number of nodes in the graph
-			if (nv < MAX_NV) {
+			// Number of nodes in the graph.
+			num_nodes = Object.keys(nodeIDs).length;
+			if (num_nodes < MAX_NUM_NODES) {
 				drawGraph(links, svg, div_name);
 			}
 			if (div_name.localeCompare(GRAPH1_DIV_NAME) == 0) {
@@ -106,12 +105,11 @@ function loadGraphFile(file, svg, div_name) {
 			} else {
 				graph2_data = file_content;
 			}
-			// change value of k to be mx nv
-			document.getElementById("k").max = nv;
-			// set current values for k and measure
+			// Change max of k to be num_nodes.
+			document.getElementById("k").max = num_nodes;
+			// Set current values for k and measure.
 			k = document.getElementById("k").min;
 			measure = document.getElementById("measure_list").value;
-
 		};
 		reader.readAsText(file);
 	} else {
@@ -120,14 +118,13 @@ function loadGraphFile(file, svg, div_name) {
 }
 
 /**
- * Draw the graph given its links
+ * Draw the graph given its links.
  */
 function drawGraph(links, svg, div_name) {
-	if (svg) { // remove old drawing
+	if (svg) { // Remove old drawing.
 		svg.selectAll("*").remove();
 		svg.remove();
 	}
-
 	var nodes = {};
 	// Compute the distinct nodes from the links.
 	links.forEach(function(link) {
@@ -138,45 +135,36 @@ function drawGraph(links, svg, div_name) {
 			name : link.target
 		});
 	});
-
 	var force = d3.layout.force().nodes(d3.values(nodes)).links(links).size(
 			[ DIV_WIDTH, DIV_HEIGHT ]).linkDistance(60).charge(-300).on("tick",
 			tick).start();
-
 	svg = d3.select(div_name).append("svg").attr("viewBox",
 			"0 0 " + DIV_WIDTH + " " + DIV_HEIGHT);
-
-	// Add links to svg
+	// Add links to svg.
 	var link = svg.selectAll(".link").data(force.links()).enter()
 			.append("line").attr("class", "link");
-
-	// Add nodes to svg
+	// Add nodes to svg.
 	var node = svg.selectAll(".node").data(force.nodes()).enter().append("g")
 			.attr("class", "node").on("mouseover", mouseover).on("mouseout",
 					mouseout).call(force.drag);
-
 	node.append("circle").attr("r", 10);
 	node.append("text").attr("x", 12).attr("dy", ".35em").text(function(d) {
 		return d.name;
 	});
 
 	function tick() {
-
 		node.attr("transform", function(d) {
-			// if the graph is graph1, then store its x and y positions
-
+			// If the graph is graph1, then store its x and y positions.
 			if (div_name.localeCompare(GRAPH1_DIV_NAME) == 0) {
 				graph1_x[d.name] = d.x;
 				graph1_y[d.name] = d.y;
 			} else {
-				// set graph 2 nodes to same position as graph 1
+				// Set graph 2 nodes to same position as graph 1.
 				d.x = graph1_x[d.name];
 				d.y = graph1_y[d.name];
 			}
-
 			return "translate(" + d.x + "," + d.y + ")";
 		});
-
 		link.attr("x1", function(d) {
 			return d.source.x;
 		}).attr("y1", function(d) {
@@ -186,7 +174,6 @@ function drawGraph(links, svg, div_name) {
 		}).attr("y2", function(d) {
 			return d.target.y;
 		});
-
 	}
 
 	function mouseover() {
@@ -198,88 +185,85 @@ function drawGraph(links, svg, div_name) {
 		d3.select(this).select("circle").transition().duration(750)
 				.attr("r", 8);
 	}
-
-	// update svg of each graph
+	// Update svg of each graph.
 	if (div_name.localeCompare(GRAPH1_DIV_NAME) == 0) {
 		svg1 = svg;
 	} else {
 		svg2 = svg;
 	}
-
 	firstDraw = 0;
 }
 
 /**
  * This function is called when the user presses run to call the servlet and run
- * the Matlab code
+ * the Matlab code.
  */
 function colorGraph() {
-	// call the servlet to calculate the distortion colors
+	// Call the servlet to calculate the distortion colors.
 	var url = GRAPH_SERVLET_URL;
 	var params = "graph1file=" + graph1_data + "&graph2file=" + graph2_data
 			+ "&k=" + k + "&measure=" + measure + "&region=" + region;
 	var http;
-	if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+	if (window.XMLHttpRequest) {
+		// Code for IE7+, Firefox, Chrome, Opera, Safari.
 		http = new XMLHttpRequest();
-	} else {// code for IE6, IE5
+	} else {// Code for IE6, IE5.
 		http = new ActiveXObject("Microsoft.XMLHTTP");
 	}
 	http.open("POST", url, true);
-
-	// Send the proper header information along with the request
+	// Send the proper header information along with the request.
 	http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	http.setRequestHeader("Content-length", params.length);
 	http.setRequestHeader("Connection", "close");
 	http.onreadystatechange = function() {
-		if (http.readyState == 4 && http.status == 200) { // get the servlet
-			// results
+		// Get the servlet results.
+		if (http.readyState == 4 && http.status == 200) {
 			var response = http.responseText;
 			parseResponse(response);
-			// color graph1 with the result
+			// Color graph1 with the result.
 			svg1.selectAll(".node").append("circle").attr("r", 10).style(
 					"fill", function(d1) {
 						return colors[d1.name];
 					});
-			// color graph2 with the result
+			// Color graph2 with the result.
 			svg2.selectAll(".node").append("circle").attr("r", 10).style(
 					"fill", function(d1) {
 						return colors[d1.name];
 					});
-
 		}
 	};
-	http.send(params); // send the paramters
+	http.send(params); // Send the parameters.
 }
 
 /**
- * Parse the servlet response
+ * Parse the servlet response.
  */
 function parseResponse(response) {
 	var distorition = response.split('_');
-	// if the region changed or the first time to draw the graph
-	// then re-draw the graph
+	// If the region changed or the first time to draw the graph
+	// then re-draw the graph.
 	if (region != prev_region || firstDraw) {
 		prev_region = region;
 		var graph1 = distorition[1].split('-');
 		var links1 = [];
 		for ( var i = 0; i < graph1.length; i++) {
-			if (graph1[i].length == 0)
+			if (graph1[i].length == 0) {
 				continue;
+			}
 			var edge = graph1[i].split(",");
 			var link = {};
 			link['source'] = edge[0];
 			link['target'] = edge[1];
 			links1.push(link);
-			// Count number of nodes in the graph
+			// Count number of nodes in the graph.
 		}
-
 		drawGraph(links1, svg1, GRAPH1_DIV_NAME);
-
 		var graph2 = distorition[2].split('-');
 		var links2 = [];
 		for ( var i = 0; i < graph2.length; i++) {
-			if (graph2[i].length == 0)
+			if (graph2[i].length == 0) {
 				continue;
+			}
 			var edge = graph2[i].split(",");
 			var link = {};
 			link['source'] = edge[0];
@@ -288,30 +272,42 @@ function parseResponse(response) {
 		}
 		drawGraph(links2, svg2, GRAPH2_DIV_NAME);
 	}
-	// change the colors array based on the servlet result
+	// Change the colors array based on the servlet result.
 	colors = [];
 	var colors_array = distorition[0].split(',');
-	for ( var i = 0; i < nv; i++) {
+	for ( var i = 0; i < num_nodes; i++) {
 		colors[i + 1] = colors_array[i];
 	}
 }
 
+/**
+ * When the user changes the value of k, call the function to re-color the two
+ * graphs.
+ */
 function changeK() {
-	// when change k value, set the new value and re-color the graphs
-	// based on the new k value
+	// When change k value, set the new value and re-color the graphs
+	// based on the new k value.
 	k = document.getElementById("k").value;
 	colorGraph();
 }
 
+/**
+ * When the user changes the measure, call the function to re-color the two
+ * graphs.
+ */
 function changeMeasure() {
-	// when change the measure, store the new value and re-color the graphs
-	// based on the new measure
+	// When change the measure, store the new value and re-color the graphs
+	// based on the new measure.
 	measure = document.getElementById("measure_list").value;
 	colorGraph();
 }
 
+/**
+ * When the user choose a different area to view, call the function to re-draw
+ * the new area.
+ */
 function changeArea(element) {
-	firstDraw = 1; // always re-draw when user choose area
+	firstDraw = 1; // Always re-draw when user choose the area.
 	prev_region = region;
 	region = this.id;
 	colorGraph();
@@ -321,12 +317,10 @@ document.getElementById('file_graph_1').addEventListener('change',
 		readGraph1File, false);
 document.getElementById('file_graph_2').addEventListener('change',
 		readGraph2File, false);
-
 document.getElementById('run').addEventListener('click', colorGraph);
 document.getElementById('k').addEventListener('change', changeK, false);
 document.getElementById('measure_list').addEventListener('change',
 		changeMeasure, false);
-
 document.getElementById('1').addEventListener('click', changeArea);
 document.getElementById('2').addEventListener('click', changeArea);
 document.getElementById('3').addEventListener('click', changeArea);

@@ -2,45 +2,85 @@ package server;
 
 public class Node implements Comparable<Node> {
 
-	private double distortionValue;
-	private int id;
+  private double distortionValue = 0.0;
+  private int id = 0;
 
-	public Node(double distortionValue, int id) {
-		this.distortionValue = distortionValue;
-		this.id = id;
-	}
+  /**
+   * Node constructor.
+   * 
+   * @param distortionValue value of distortion for this node.
+   * @param id node id.
+   */
+  public Node(double distortionValue, int id) {
+    this.distortionValue = distortionValue;
+    this.id = id;
+  }
 
-	public int compareTo(Node node) {
-		if (this.distortionValue >= node.distortionValue)
-			return -1;
-		return 1;
-	}
+  /**
+   * compareTo compares to nodes, which is used in sort functionality.
+   */
+  public int compareTo(Node node) {
+    if (this.distortionValue >= node.distortionValue) {
+      return -1;
+    }
+    return 1;
+  }
 
-	public double getDistortionValue() {
-		return distortionValue;
-	}
+  /**
+   * Get distortion value.
+   * 
+   * @return distortion value of this node.
+   */
+  public double getDistortionValue() {
+    return distortionValue;
+  }
 
-	public void setDistortionValue(double distortionValue) {
-		this.distortionValue = distortionValue;
-	}
+  /**
+   * Set distortion value of this node.
+   * 
+   * @param distortionValue distortion value to set to.
+   */
+  public void setDistortionValue(double distortionValue) {
+    this.distortionValue = distortionValue;
+  }
 
-	public int getId() {
-		return id;
-	}
+  /**
+   * Get node id.
+   * 
+   * @return node id.
+   */
+  public int getId() {
+    return id;
+  }
 
-	public void setId(int id) {
-		this.id = id;
-	}
+  /**
+   * Set node id.
+   * 
+   * @param id to set the node id to.
+   */
+  public void setId(int id) {
+    this.id = id;
+  }
 
-	@Override
-	public int hashCode() {
-		return id;
-	}
+  /**
+   * Set the hash value of the node to its id.
+   */
+  @Override
+  public int hashCode() {
+    return id;
+  }
 
-	public boolean equals(Node obj) {
-		if (this.id == obj.id)
-			return true;
-		else
-			return false;
-	}
+  /**
+   * Compare whether two nodes are the same or not by looking at their ids.
+   * 
+   * @param obj to determine whether it is the same as this node or not.
+   * @return true if the two nodes are the same (have same id), otherwise return false.
+   */
+  public boolean equals(Node obj) {
+    if (this.id == obj.id) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }

@@ -2,33 +2,33 @@ body{
 	margin-left: 200px;
 }
 
-/* Styles of graphs links */
+/* Styles of graphs links. */
 .link {
   fill: none;
   stroke: #666;
   stroke-width: 1.5px;
 }
 
-/* Styles of graphs nodes */
+/* Styles of graphs nodes. */
 .node circle {
   fill: #ccc;
   stroke: #fff;
   stroke-width: 1.5px;
 }
 
-/* Styles of graphs text (name of nodes) */
+/* Styles of graphs text (name of nodes). */
 text {
   font: 10px sans-serif;
   pointer-events: none;
 }
 
-/* Size of graph window */
+/* Size of graph window. */
 svg {
 width: 150%; 
 height:100%; 
 }
 
-/* Draw the second graph with distance of 200px of the first one*/
+/* Draw the second graph with distance of 200px of the first one. */
 div.graph_2 {
 	margin-left: 200px;
 }
