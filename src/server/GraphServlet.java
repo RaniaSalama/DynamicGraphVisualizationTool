@@ -36,6 +36,7 @@ public class GraphServlet extends HttpServlet {
   private static final int MAX_NODES = 30;
   // Max overlapping nodes between regions.
   private static final double MAX_OVERLAP = 0.7;
+  private static final int REGION_SELECTOR = 1;
   // MATLAB file to run.
   private static final String MATLAB_FILE = "server/matlab/visualize_map.m";
   // basepath for storing the two graphs.
@@ -52,8 +53,9 @@ public class GraphServlet extends HttpServlet {
   private static int prevK = 0;
   private static String prevMeasure = "";
   private static String[] prevNodesColors = null;
-  private HashMap<Integer, String[]> graph1Results = null;
-  private HashMap<Integer, String[]> graph2Results = null;
+  private double[] prevNodesDistortionValues = null;
+  // Number of nodes in the graph.
+  private static int nodesNumber = 0;
 
   /**
    * Servlet constructor initializes the MATLAB proxy and sets the MATLAB path.
@@ -96,8 +98,9 @@ public class GraphServlet extends HttpServlet {
    */
   public static double[][] loadGraph(String data) {
     // '-' is the delimiter used when sending graph edges.
+    nodesNumber = 0;
     String[] edges = data.split("-");
-    double[][] graph = new double[edges.length][2];
+    double[][] graph = new double[edges.length][3];
     int index = 0;
     for (String edge : edges) {
       if (edge.startsWith(",")) {
@@ -110,6 +113,11 @@ public class GraphServlet extends HttpServlet {
       String[] nodes = edge.split(",");
       graph[index][0] = Integer.parseInt(nodes[0]);
       graph[index][1] = Integer.parseInt(nodes[1]);
+      graph[index][2] = Integer.parseInt(nodes[2]);
+      // Set the number of nodes equal to the max node id,
+      // as the nodes are numbered from 1 to nodesNumber.
+      nodesNumber = (int) Math.max(nodesNumber, graph[index][0]);
+      nodesNumber = (int) Math.max(nodesNumber, graph[index][1]);
       index++;
     }
     return graph;
@@ -164,12 +172,28 @@ public class GraphServlet extends HttpServlet {
           && prevMeasure.equalsIgnoreCase(matlabParameters[3])) {
         // If same graph with same parameters but different regions,
         // re-use previous results.
-        int regionSelector = Integer.parseInt(matlabParameters[4]);
-        String[] graph1ResultsRegion = graph1Results.get(regionSelector);
-        String[] graph2ResultsRegion = graph2Results.get(regionSelector);
-        for (int i = 0; i < prevNodesColors.length; i++) {
+        int selectedRegionNumber = Integer.parseInt(matlabParameters[4]);
+        double[] nodesDistortionSelected = new double[nodesNumber];
+        for (int i = 0; i < nodesNumber; i++) {
+          nodesDistortionSelected[i] =
+              prevNodesDistortionValues[(selectedRegionNumber - 1) * nodesNumber + i];
+        }
+        // Load graph2.
+        RegionSelector regionsGraph2 = new RegionSelector(nodesDistortionSelected, graph2);
+        // Select top-region_num from graph2 results.
+        HashMap<Integer, String[]> graph2Results =
+            regionsGraph2.getRegions(REGION_NUM, MAX_NODES, MAX_OVERLAP);
+        // Load graph1.
+        RegionSelector regionsGraph1 = new RegionSelector(nodesDistortionSelected, graph1);
+        // Select from graph1 same nodes as graph2 but with their new edges
+        // in graph1.
+        HashMap<Integer, String[]> graph1Results =
+            regionsGraph1.getMapping(graph2Results, regionsGraph1.getGraph());
+        String[] graph1ResultsRegion = graph1Results.get(REGION_SELECTOR);
+        String[] graph2ResultsRegion = graph2Results.get(REGION_SELECTOR);
+        for (int i = 0; i < nodesNumber; i++) {
           // Get the nodes colors.
-          out.print(prevNodesColors[i] + ",");
+          out.print(prevNodesColors[(selectedRegionNumber - 1) * nodesNumber + i] + ",");
         }
         // Write selected regions to the response.
         out.print("_");
@@ -190,27 +214,38 @@ public class GraphServlet extends HttpServlet {
       MatlabTypeConverter processor = new MatlabTypeConverter(proxy);
       processor.setNumericArray("G1", new MatlabNumericArray(graph1, null));
       processor.setNumericArray("G2", new MatlabNumericArray(graph2, null));
+      int k = Integer.parseInt(matlabParameters[2]);
       // Run the visualize_map code.
-      proxy.eval("[nodes_colors, nodes_values] = visualize_map(G1,G2,"
-          + Integer.parseInt(matlabParameters[2]) + ",1,'" + matlabParameters[3] + "');");
-      String[] nodes_colors = (String[]) proxy.getVariable("nodes_colors");
-      for (int i = 0; i < nodes_colors.length; i++) {
-        out.print(nodes_colors[i] + ","); // Get the nodes colors.
+      proxy.eval("[nodes_colors, nodes_values] = visualize_map(G1,G2," + k + "," + REGION_NUM
+          + ",'" + matlabParameters[3] + "');");
+      int selectedRegionNumber = Integer.parseInt(matlabParameters[4]);
+      // MATLAB codes return nodes_colors and nodesDistortionValues
+      // as 1D array by stacking the 2D matrix column wise.
+      String[] nodesColors = (String[]) proxy.getVariable("nodes_colors");
+      for (int i = 0; i < nodesNumber; i++) {
+        // Get the nodes colors.
+        out.print(nodesColors[(selectedRegionNumber - 1) * nodesNumber + i] + ",");
       }
-      double[] nodes_values = (double[]) proxy.getVariable("nodes_values");
+      double[] nodesDistortionValues = (double[]) proxy.getVariable("nodes_values");
+      double[] nodesDistortionSelected = new double[nodesNumber];
+      for (int i = 0; i < nodesNumber; i++) {
+        nodesDistortionSelected[i] =
+            nodesDistortionValues[(selectedRegionNumber - 1) * nodesNumber + i];
+      }
       // Load graph2.
-      RegionSelector regionsGraph2 = new RegionSelector(nodes_values, graph2);
+      RegionSelector regionsGraph2 = new RegionSelector(nodesDistortionSelected, graph2);
       // Select top-region_num from graph2 results.
-      graph2Results = regionsGraph2.getRegions(REGION_NUM, MAX_NODES, MAX_OVERLAP);
+      HashMap<Integer, String[]> graph2Results =
+          regionsGraph2.getRegions(REGION_NUM, MAX_NODES, MAX_OVERLAP);
       // Load graph1.
-      RegionSelector regionsGraph1 = new RegionSelector(nodes_values, graph1);
+      RegionSelector regionsGraph1 = new RegionSelector(nodesDistortionSelected, graph1);
       // Select from graph1 same nodes as graph2 but with their new edges
       // in graph1.
-      graph1Results = regionsGraph1.getMapping(graph2Results, regionsGraph1.getGraph());
+      HashMap<Integer, String[]> graph1Results =
+          regionsGraph1.getMapping(graph2Results, regionsGraph1.getGraph());
       // Select the region specified by the user.
-      int regionSelector = Integer.parseInt(matlabParameters[4]);
-      String[] graph1ResultsRegion = graph1Results.get(regionSelector);
-      String[] graph2ResultsRegion = graph2Results.get(regionSelector);
+      String[] graph1ResultsRegion = graph1Results.get(REGION_SELECTOR);
+      String[] graph2ResultsRegion = graph2Results.get(REGION_SELECTOR);
       // Write selected regions to the response.
       out.print("_");
       for (int i = 0; i < graph1ResultsRegion.length; i++) {
@@ -226,7 +261,8 @@ public class GraphServlet extends HttpServlet {
       prevGraph2 = graph2;
       prevK = Integer.parseInt(matlabParameters[2]);
       prevMeasure = matlabParameters[3];
-      prevNodesColors = nodes_colors;
+      prevNodesColors = nodesColors;
+      prevNodesDistortionValues = nodesDistortionValues;
       // proxy.disconnect();
     } catch (MatlabInvocationException ex) {
       out.println(ex.getMessage());

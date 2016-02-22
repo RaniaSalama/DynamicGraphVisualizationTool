@@ -3,16 +3,17 @@
  * modified by Rania Ibrahim.
  */
 
-var GRAPH1_DIV_NAME = "#graph_1"; // graph 1 div name.
-var GRAPH2_DIV_NAME = "#graph_2"; // graph 2 div name.
-var DIV_WIDTH = 500; // graph 1 and graph 2 div width.
-var DIV_HEIGHT = 500; // graph 1 and graph 2 div height.
+var GRAPH1_DIV_NAME = "#graph_1"; // Graph 1 div name.
+var GRAPH2_DIV_NAME = "#graph_2"; // Graph 2 div name.
+var DIV_WIDTH = 500; // Graph 1 and graph 2 div width.
+var DIV_HEIGHT = 500; // Graph 1 and graph 2 div height.
 // URL of the Java servlet.
 var GRAPH_SERVLET_URL = "http://localhost:8080/Dynamic_Graph_Visualization_Juno/GraphServlet?";
 var MAX_NUM_NODES = 50; // If the graph has nodes less than MAX_NUM_NODES, then
 // draw the whole graph.
-var graph1_data; // graph 1 content.
-var graph2_data; // graph 2 content.
+var MAX_K = 300; // Max value for the k parameter.
+var graph1_data; // Graph 1 content.
+var graph2_data; // Graph 2 content.
 var svg1; // Drawing object for graph 1.
 var svg2; // Drawing object for graph 2.
 var num_nodes; // Number of nodes in the graph.
@@ -25,7 +26,10 @@ var region; // Stores the number of region to return, 1 means return the most
 var colors; // Stores the colors of the nodes.
 var prev_region; // Re-draw if the user selected a different region.
 var firstDraw; // Whether it is first time to draw the graph.
-
+var user_to_system_ids_mapping = {}; // Mapping between user's node IDs and
+// system's node IDs.
+var system_to_user_ids_mapping = {}; // Mapping between system's node IDs and
+// user's node IDs.
 /**
  * This function is called to initialize the graphs when a different graph file
  * is selected.
@@ -76,23 +80,54 @@ function loadGraphFile(evt, svg, div_name) {
 	if (file) { // If file exist.
 		var reader = new FileReader();
 		reader.onload = function(e) {
-			var edges = e.target.result.split('\n');
-			var nodeIDs = new Set();
+			var nodes = e.target.result.split('\n');
 			var file_content = [];
 			var links = []; // Links of the graph.
-			for ( var i = 0; i < edges.length; i++) {
-				var edge = edges[i].split(',');
-				var link = {};
-				link['source'] = edge[0];
-				link['target'] = edge[1];
-				links.push(link);
-				// Count number of nodes in the graph.
-				nodeIDs.add(edge[0]);
-				nodeIDs.add(edge[1]);
-				file_content.push(edges[i] + "-");
+			num_nodes = 0; // Count number of nodes in the graph.
+			// System node id starts from 1.
+			var current_system_node_id = 1;
+			if (div_name.localeCompare(GRAPH1_DIV_NAME) == 0) {
+				// Only initialize the mapping for the first graph.
+				// The second graph should follow the first graph mapping.
+				user_to_system_ids_mapping = {};
+				system_to_user_ids_mapping = {};
 			}
-			// Number of nodes in the graph.
-			num_nodes = nodeIDs.size;
+			for ( var i = 0; i < nodes.length; i++) {
+				var node = nodes[i].split('[');
+				var node_attributes = node[0].split(',');
+				var node_id = node_attributes[0];
+				var trunk_amount = 2; // Always remove ]\r.
+				if (i == nodes.length - 1)
+					trunk_amount = 1; // Last line just remove ].
+				var node_links = node[1].substring(0,
+						node[1].length - trunk_amount).split(',');
+				var system_node_id = user_to_system_ids_mapping[node_id];
+				if (system_node_id == undefined) { // Not added to the mapping
+					// yet.
+					user_to_system_ids_mapping[node_id] = current_system_node_id;
+					system_to_user_ids_mapping[current_system_node_id] = node_id;
+					system_node_id = current_system_node_id;
+					current_system_node_id++;
+				}
+				for ( var j = 0; j < node_links.length; j++) {
+					var node_link = node_links[j].split(':');
+					var link = {};
+					link['source'] = node_id;
+					link['target'] = node_link[0];
+					links.push(link);
+					var system_node_link_id = user_to_system_ids_mapping[node_link[0]];
+					if (system_node_link_id == undefined) { // Not added to the
+						// mapping yet.
+						user_to_system_ids_mapping[node_link[0]] = current_system_node_id;
+						system_to_user_ids_mapping[current_system_node_id] = node_link[0];
+						system_node_link_id = current_system_node_id;
+						current_system_node_id++;
+					}
+					file_content.push(system_node_id + ","
+							+ system_node_link_id + "," + node_link[1] + "-");
+				}
+				num_nodes++;
+			}
 			if (num_nodes < MAX_NUM_NODES) {
 				drawGraph(links, svg, div_name);
 			}
@@ -102,7 +137,7 @@ function loadGraphFile(evt, svg, div_name) {
 				graph2_data = file_content;
 			}
 			// Change max of k to be num_nodes.
-			document.getElementById("k").max = num_nodes;
+			document.getElementById("k").max = Math.min(num_nodes, MAX_K);
 			// Set current values for k and measure.
 			k = document.getElementById("k").min;
 			measure = document.getElementById("measure_list").value;
@@ -219,12 +254,18 @@ function colorGraph() {
 			// Color graph1 with the result.
 			svg1.selectAll(".node").append("circle").attr("r", 10).style(
 					"fill", function(d1) {
-						return colors[d1.name];
+						// As the colors returned are based on the system IDs,
+						// convert the user ID to the system ID and get its
+						// color.
+						return colors[user_to_system_ids_mapping[d1.name]];
 					});
 			// Color graph2 with the result.
 			svg2.selectAll(".node").append("circle").attr("r", 10).style(
 					"fill", function(d1) {
-						return colors[d1.name];
+						// As the colors returned are based on the system IDs,
+						// convert the user ID to the system ID and get its
+						// color.
+						return colors[user_to_system_ids_mapping[d1.name]];
 					});
 		}
 	};
@@ -248,10 +289,11 @@ function parseResponse(response) {
 			}
 			var edge = graph1[i].split(",");
 			var link = {};
-			link['source'] = edge[0];
-			link['target'] = edge[1];
+			// As the returned edges are based on the system ID,
+			// convert them to user ID for visualization.
+			link['source'] = system_to_user_ids_mapping[edge[0]];
+			link['target'] = system_to_user_ids_mapping[edge[1]];
 			links1.push(link);
-			// Count number of nodes in the graph.
 		}
 		drawGraph(links1, svg1, GRAPH1_DIV_NAME);
 		var graph2 = distorition[2].split('-');
@@ -262,8 +304,10 @@ function parseResponse(response) {
 			}
 			var edge = graph2[i].split(",");
 			var link = {};
-			link['source'] = edge[0];
-			link['target'] = edge[1];
+			// As the returned edges are based on the system ID,
+			// convert them to user ID for visualization.
+			link['source'] = system_to_user_ids_mapping[edge[0]];
+			link['target'] = system_to_user_ids_mapping[edge[1]];
 			links2.push(link);
 		}
 		drawGraph(links2, svg2, GRAPH2_DIV_NAME);

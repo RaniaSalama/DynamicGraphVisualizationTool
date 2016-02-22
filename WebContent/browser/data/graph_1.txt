@@ -1,0 +1,4 @@
+microsoft,1,[google:1,linkedin:1]
+google,1,[microsoft:1,fitbit:1]
+linkedin,1,[microsoft:1,fitbit:1]
+fitbit,1,[google:1,linkedin:1]
