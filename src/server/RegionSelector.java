@@ -191,6 +191,8 @@ public class RegionSelector {
       }
       // Convert BFSgraph into edges array format.
       String[] edges = convertGraphToArray(bfsGraph);
+      if(edges.length == 0)
+        continue;
       regions.put(index, edges);
       index++;
       selectedNodes.addAll(bfsGraph.keySet());

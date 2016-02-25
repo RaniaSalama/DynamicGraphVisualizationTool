@@ -110,6 +110,8 @@ function loadGraphFile(evt, svg, div_name) {
 					current_system_node_id++;
 				}
 				for ( var j = 0; j < node_links.length; j++) {
+					if (node_links[j].length == 0)
+						continue;
 					var node_link = node_links[j].split(':');
 					var link = {};
 					link['source'] = node_id;
@@ -139,7 +141,8 @@ function loadGraphFile(evt, svg, div_name) {
 			// Change max of k to be num_nodes.
 			document.getElementById("k").max = Math.min(num_nodes, MAX_K);
 			// Set current values for k and measure.
-			k = document.getElementById("k").min;
+			//k = document.getElementById("k").min;
+			k = 100;
 			measure = document.getElementById("measure_list").value;
 		};
 		reader.readAsText(file);
@@ -191,8 +194,17 @@ function drawGraph(links, svg, div_name) {
 				graph1_y[d.name] = d.y;
 			} else {
 				// Set graph 2 nodes to same position as graph 1.
-				d.x = graph1_x[d.name];
-				d.y = graph1_y[d.name];
+				if (graph1_x[d.name] == undefined) { // There is a node in
+					// graph 2 not in graph
+					// 1.
+					d.x = Math.random()*DIV_WIDTH;
+					d.y = Math.random()*DIV_HEIGHT;
+					graph1_x[d.name] = d.x;
+					graph1_y[d.name] = d.y;
+				} else {
+					d.x = graph1_x[d.name];
+					d.y = graph1_y[d.name];
+				}
 			}
 			return "translate(" + d.x + "," + d.y + ")";
 		});
@@ -265,6 +277,7 @@ function colorGraph() {
 						// As the colors returned are based on the system IDs,
 						// convert the user ID to the system ID and get its
 						// color.
+						
 						return colors[user_to_system_ids_mapping[d1.name]];
 					});
 		}
@@ -309,6 +322,7 @@ function parseResponse(response) {
 			link['source'] = system_to_user_ids_mapping[edge[0]];
 			link['target'] = system_to_user_ids_mapping[edge[1]];
 			links2.push(link);
+
 		}
 		drawGraph(links2, svg2, GRAPH2_DIV_NAME);
 	}

@@ -33,9 +33,9 @@ public class GraphServlet extends HttpServlet {
   // Number of regions to calculate.
   private static final int REGION_NUM = 10;
   // Max number of nodes per region.
-  private static final int MAX_NODES = 30;
+  private static final int MAX_NODES = 15;
   // Max overlapping nodes between regions.
-  private static final double MAX_OVERLAP = 0.7;
+  private static final double MAX_OVERLAP = 0.8;
   private static final int REGION_SELECTOR = 1;
   // MATLAB file to run.
   private static final String MATLAB_FILE = "server/matlab/visualize_map.m";
@@ -98,7 +98,6 @@ public class GraphServlet extends HttpServlet {
    */
   public static double[][] loadGraph(String data) {
     // '-' is the delimiter used when sending graph edges.
-    nodesNumber = 0;
     String[] edges = data.split("-");
     double[][] graph = new double[edges.length][3];
     int index = 0;
@@ -147,6 +146,7 @@ public class GraphServlet extends HttpServlet {
    */
   protected void doPost(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
+    nodesNumber = 0;
     PrintWriter out = response.getWriter();
     String parameters = "";
     Enumeration<String> keys = request.getParameterNames();

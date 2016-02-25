@@ -13,23 +13,23 @@
 % Note that, the method currently only work for undirected graphs. 
 %}
 function [colors_nodes, distortion_values] = visualize_map(G1, G2, k, r, measure_method)
-
 % get number of nodes as the max node id.
+rng(1); % fix randomization.
 nv = max(max(max(G1(:,1)), max(G1(:,2))), max(max(G2(:,1)), max(G2(:,2))));
 r = min(r, k); % in case r exceeds k 
 % convert graph adjacency list to sparse matrix.
 M = sparse(G1(:,1), G1(:,2), G1(:,3), nv, nv);
 N = sparse(G2(:,1), G2(:,2), G2(:,3), nv, nv);
-
 % Calculate F and G where F and G are a diagonal matrix where each entry represents the
 % degree of the nodes of M and N respectively. 
-F = spdiags(sum(M,2),0, nv, nv);
+F = spdiags(1./sum(M,2),0, nv, nv);
 G = spdiags(sum(N,2),0, nv, nv);
 
 L1 = spdiags(sum(M,2), 0, nv, nv) - M;
+
 % e1 are the eigenvectors of F^-1*L1.
 % v1 are the eigenvalues of F^-1*L1.
-[e1, v1] = eigs(L1, F, k, -1e-7);
+[e1, v1] = eigs(F*L1, k);
 [v1, order] = sort(diag(v1),'ascend');
 e1 = e1(:,order);
 
