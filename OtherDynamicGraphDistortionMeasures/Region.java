@@ -7,16 +7,60 @@ public class Region implements Comparable<Region> {
   private HashSet<Node> nodes;
   // Distortion value of the region.
   private double distortionValue;
+  // Radius of the region.
+  private int radius;
+  // Number of nodes in the region.
+  private int regionSize;
+
+  /**
+   * Get radius of the region.
+   * 
+   * @return radius of the region.
+   */
+  public int getRadius() {
+    return radius;
+  }
+
+  /**
+   * Set radius of the region.
+   * 
+   * @param radius of the region.
+   */
+  public void setRadius(int radius) {
+    this.radius = radius;
+  }
+
+  /**
+   * Get region size.
+   * 
+   * @return region size.
+   */
+  public int getRegionSize() {
+    return regionSize;
+  }
+
+  /**
+   * set region size.
+   * 
+   * @param regionSize the region size.
+   */
+  public void setRegionSize(int regionSize) {
+    this.regionSize = regionSize;
+  }
 
   /**
    * Set the region nodes and distortion values.
    * 
    * @param nodes of the region.
    * @param distortionValue of the region.
+   * @param radius of the region.
+   * @param regionSize size of the region.
    */
-  public Region(HashSet<Node> nodes, double distortionValue) {
+  public Region(HashSet<Node> nodes, double distortionValue, int radius, int regionSize) {
     this.nodes = nodes;
     this.distortionValue = distortionValue;
+    this.radius = radius;
+    this.regionSize = regionSize;
   }
 
   /**
