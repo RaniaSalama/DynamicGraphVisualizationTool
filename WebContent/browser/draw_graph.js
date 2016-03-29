@@ -141,8 +141,8 @@ function loadGraphFile(evt, svg, div_name) {
 			// Change max of k to be num_nodes.
 			document.getElementById("k").max = Math.min(num_nodes, MAX_K);
 			// Set current values for k and measure.
-			//k = document.getElementById("k").min;
-			k = 100;
+			//k = documentgetElementById("k").min;
+			k = Math.min(250, num_nodes);
 			measure = document.getElementById("measure_list").value;
 		};
 		reader.readAsText(file);

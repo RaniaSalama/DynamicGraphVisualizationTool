@@ -2,8 +2,13 @@ package server;
 
 public class Node implements Comparable<Node> {
 
+  // Distortion value calculated based on the spectral method.
   private double distortionValue = 0.0;
+  // Node id.
   private int id = 0;
+  // Delta change of the node based on the absolute difference between its edges in graph1 and
+  // graph2.
+  private double delta = 0.0;
 
   /**
    * Node constructor.
@@ -20,10 +25,13 @@ public class Node implements Comparable<Node> {
    * compareTo compares to nodes, which is used in sort functionality.
    */
   public int compareTo(Node node) {
-    if (this.distortionValue >= node.distortionValue) {
+    if (this.distortionValue > node.distortionValue) {
       return -1;
+    } else if (this.distortionValue == node.distortionValue) {
+      return 0;
+    } else {
+      return 1;
     }
-    return 1;
   }
 
   /**
@@ -60,6 +68,22 @@ public class Node implements Comparable<Node> {
    */
   public void setId(int id) {
     this.id = id;
+  }
+
+  /**
+   * Get delta change of the node.
+   * @return delta change of the node.
+   */
+  public double getDelta() {
+    return delta;
+  }
+
+  /**
+   * Set delta change of the node.
+   * @param delta change of the node.
+   */
+  public void setDelta(double delta) {
+    this.delta = delta;
   }
 
   /**

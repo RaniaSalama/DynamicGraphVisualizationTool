@@ -77,7 +77,7 @@ for i=1:r
     distortion_value_i = distortion_values(:,i);
 	for k=1:nv
 	    pos = (distortion_value_i(k)-min(distortion_value_i))/(max(distortion_value_i)-min(distortion_value_i));
-	    pos = ceil(pos*100);
+	    pos = real(ceil(pos*100));
 	    if(pos>100 || isnan(pos))
 	        pos = 100;
 	    elseif(pos<=0)
