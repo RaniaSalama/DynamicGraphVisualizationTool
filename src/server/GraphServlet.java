@@ -44,7 +44,7 @@ public class GraphServlet extends HttpServlet {
   // MATLAB file to run.
   private static final String MATLAB_FILE = "server/matlab/visualize_map.m";
   // Remove nodes with delta change below this threshold.
-  private static final double DEFAULT_THRESHOLD = 0;
+  private static final double DEFAULT_THRESHOLD = 0.65;
   // Biased k used in Biased BFS.
   private final static int BIASEDK = 5;
   // basepath for storing the two graphs.
@@ -288,6 +288,9 @@ public class GraphServlet extends HttpServlet {
    */
   public ArrayList<SpectralMethodRegionSelector> getRegion(double[] nodesDistortionValues,
       int selectedRegionNumber, double step) {
+    if (nodesDistortionValues.length == 0) {
+      return null;
+    }
     double[] nodesDistortionSelected = new double[nodesNumber];
     for (int i = 0; i < nodesNumber; i++) { // Store the distortion value of the corresponding
                                             // singular vector.
@@ -461,13 +464,8 @@ public class GraphServlet extends HttpServlet {
           // If same graph with same parameters but different regions,
           // re-use previous results.
           int selectedRegionNumber = Integer.parseInt(toolParameters[4]);
-          double[] nodesDistortionSelected = new double[nodesNumber];
-          for (int i = 0; i < nodesNumber; i++) {
-            nodesDistortionSelected[i] =
-                prevNodesDistortionValues[(selectedRegionNumber - 1) * nodesNumber + i];
-          }
           ArrayList<SpectralMethodRegionSelector> regions =
-              getRegion(nodesDistortionSelected, selectedRegionNumber, DEFAULT_THRESHOLD);
+              getRegion(prevNodesDistortionValues, selectedRegionNumber, DEFAULT_THRESHOLD);
           SpectralMethodRegionSelector regionsGraph1 = regions.get(0);
           SpectralMethodRegionSelector regionsGraph2 = regions.get(1);
           // Select top-region_num from graph2 results.
@@ -500,29 +498,35 @@ public class GraphServlet extends HttpServlet {
         }
         ArrayList<String[]> graphColors = runSpectralMethod(toolParameters, DEFAULT_THRESHOLD);
         String[] nodesColors = graphColors.get(0);
-        int selectedRegionNumber = Integer.parseInt(toolParameters[4]);
-        for (int i = 0; i < nodesNumber; i++) {
-          // Get the nodes colors.
-          out.print(nodesColors[(selectedRegionNumber - 1) * nodesNumber + i] + ",");
+        if (nodesColors.length == 0) {
+          System.out.println("Emptry color array!");
+          System.exit(0);
+        } else {
+          int selectedRegionNumber = Integer.parseInt(toolParameters[4]);
+          for (int i = 0; i < nodesNumber; i++) {
+            // Get the nodes colors.
+            System.out.println(i + " " + nodesColors[(selectedRegionNumber - 1) * nodesNumber + i]);
+            out.print(nodesColors[(selectedRegionNumber - 1) * nodesNumber + i] + ",");
+          }
+          // Write selected regions to the response.
+          out.print("_");
+          String[] graph1ResultsRegion = graphColors.get(1);
+          for (int i = 0; i < graph1ResultsRegion.length; i++) {
+            out.print(graph1ResultsRegion[i] + "-"); // Get the nodes
+            // colors.
+          }
+          out.print("_");
+          String[] graph2ResultsRegion = graphColors.get(2);
+          for (int i = 0; i < graph2ResultsRegion.length; i++) {
+            out.print(graph2ResultsRegion[i] + "-"); // Get the nodes colors.
+          }
+          // Store the current results for checking next time.
+          prevGraph1 = graph1;
+          prevGraph2 = graph2;
+          prevK = Integer.parseInt(toolParameters[2]);
+          prevMeasure = toolParameters[3];
+          prevNodesColors = nodesColors;
         }
-        // Write selected regions to the response.
-        out.print("_");
-        String[] graph1ResultsRegion = graphColors.get(1);
-        for (int i = 0; i < graph1ResultsRegion.length; i++) {
-          out.print(graph1ResultsRegion[i] + "-"); // Get the nodes
-          // colors.
-        }
-        out.print("_");
-        String[] graph2ResultsRegion = graphColors.get(2);
-        for (int i = 0; i < graph2ResultsRegion.length; i++) {
-          out.print(graph2ResultsRegion[i] + "-"); // Get the nodes colors.
-        }
-        // Store the current results for checking next time.
-        prevGraph1 = graph1;
-        prevGraph2 = graph2;
-        prevK = Integer.parseInt(toolParameters[2]);
-        prevMeasure = toolParameters[3];
-        prevNodesColors = nodesColors;
         // proxy.disconnect();
       } catch (MatlabInvocationException ex) {
         out.println(ex.getMessage());
@@ -703,7 +707,7 @@ public class GraphServlet extends HttpServlet {
    * @throws MatlabConnectionException
    */
   public void runEvaluationsWithRespectToRegionSizeWithThresholding(String inputFile1,
-      String inputFile2, double step) throws IOException, URISyntaxException,
+      String inputFile2, double step, String method) throws IOException, URISyntaxException,
       MatlabInvocationException, MatlabConnectionException {
     double[] maxEvaluationMeasures = new double[6]; // Six evaluation measures.
     String[] maxEvaluationMeasuresString = new String[6]; // Evaluation measures string format.
@@ -719,7 +723,7 @@ public class GraphServlet extends HttpServlet {
     graph2 = loadGraph(reader2.readLine());
     while (threshold < maxThreshold) {
       System.out.println(threshold);
-      Loop: for (int k = 12; k <= Math.min(400, nodesNumber); k += 2) { // Loop over k values to
+      Loop: for (int k = 1000; k <= Math.min(1400, nodesNumber); k += 20) { // Loop over k values to
                                                                         // choose the best one.
         // System.out.println(k);
         try {
@@ -730,13 +734,20 @@ public class GraphServlet extends HttpServlet {
           }
           String[] matlabParameters = new String[5];
           matlabParameters[2] = k + "";
-          matlabParameters[3] = "conformal-based";
+          matlabParameters[3] = method;
           matlabParameters[4] = 1 + "";
           runSpectralMethodForThresholding(matlabParameters, threshold);
           double[] nodesDistortionValues = (double[]) proxy.getVariable("nodes_values");
+          if (nodesDistortionValues.length == 0) {
+            System.out.println("Returned distortions are empty! "+k);
+            continue;
+          }
           for (int selectedRegionNumber = 1; selectedRegionNumber <= 10; selectedRegionNumber++) {
             double[] nodesDistortionSelected = new double[nodesNumber];
             for (int i = 0; i < nodesNumber; i++) {
+              if((selectedRegionNumber - 1) * nodesNumber + i >= nodesDistortionValues.length) {
+                continue Loop;
+              }
               nodesDistortionSelected[i] =
                   nodesDistortionValues[(selectedRegionNumber - 1) * nodesNumber + i];
             }
@@ -752,6 +763,7 @@ public class GraphServlet extends HttpServlet {
                 regionsGraph2.getGraph(), regionsGraph2.getNodeMapping());
             double[] currentEvaluationMeasures = regionsGraph1.getEvaluationMeasures();
             if (currentEvaluationMeasures == null) {
+              System.out.println("Null evaluation measure " + k);
               continue Loop;
             }
             for (int i = 0; i < evaluationMeasuresSum.length; i++) {
@@ -772,6 +784,7 @@ public class GraphServlet extends HttpServlet {
           }
         } catch (MatlabInvocationException ex) {
           // If K exceeds the number of nodes in the graph, Matlab code throws an exception.
+          System.out.println("Error in Matlab "+ex.getMessage());
           continue;
         }
       }
@@ -823,8 +836,10 @@ public class GraphServlet extends HttpServlet {
     String inputFile2 = scanner.nextLine();
     // Number of runs to choose the threshold.
     double step = 0.01;
+    String method = scanner.nextLine();
     GraphServlet servlet = new GraphServlet();
-    servlet.runEvaluationsWithRespectToRegionSizeWithThresholding(inputFile1, inputFile2, step);
+    servlet.runEvaluationsWithRespectToRegionSizeWithThresholding(inputFile1, inputFile2, step,
+        method);
     scanner.close();
   }
 

@@ -22,33 +22,39 @@ M = sparse(G1(:,1), G1(:,2), G1(:,3), nv, nv);
 N = sparse(G2(:,1), G2(:,2), G2(:,3), nv, nv);
 % Calculate F and G where F and G are a diagonal matrix where each entry represents the
 % degree of the nodes of M and N respectively. 
-F = spdiags(1./sum(M,2),0, nv, nv);
+F = spdiags(1./(sum(M,2)+1),0, nv, nv);
 G = spdiags(sum(N,2),0, nv, nv);
-
 L1 = spdiags(sum(M,2), 0, nv, nv) - M;
-
+L2 = spdiags(sum(N,2), 0, nv, nv) - N;
 % e1 are the eigenvectors of F^-1*L1.
 % v1 are the eigenvalues of F^-1*L1.
-[e1, v1] = eigs(F*L1, k);
+[e1,v1] = eig(full(F*L1));
 [v1, order] = sort(diag(v1),'ascend');
 e1 = e1(:,order);
-
-L2 = spdiags(sum(N,2), 0, nv, nv) - N;
-
+v1 = v1(1:k);
+e1 = e1(:,1:k);
 S = zeros(k, k);
 V = zeros(nv, k);
 if strcmp(measure_method, 'area-based') == 1
     % V are the eigenvectors of e1'*G*e1.
     % S are the eigenvalues of e1'*G*e1.  
+    %[V, S] = eig(e1'*G*e1, e1' * spdiags(sum(M,2), 0, nv, nv) * e1);
     [V, S] = eig(e1'*G*e1);
     [S, order] = sort(diag(S),'descend');
     V = V(:,order);
 elseif strcmp(measure_method, 'conformal-based') == 1
     v1_size = size(v1,1);
+    lamda_zero = 0;
+    for i=1:v1_size
+    	if abs(v1(i)) < 1e-5
+    		lamda_zero = lamda_zero + 1;
+    	end
+    end
+    start = lamda_zero + 1;
     % E is a vector containing the diagonal values of the v1.
-    E = diag(v1(2:v1_size));
+    E = diag(v1(start:v1_size));
     R = e1'*L2*e1;
-    R = R(2:v1_size, 2:v1_size);
+    R = R(start:v1_size, start:v1_size);
     % V are the eigenvectors of E^-1*R.
     % S are the eigenvalues of E^-1*R.
     [V, S] = eig(R, E);
@@ -56,8 +62,90 @@ elseif strcmp(measure_method, 'conformal-based') == 1
     V = V(:, order);
     % r number of singular vectors and values to return.
     r = min(r, size(V,2));
-    V = [zeros(1,r);V(:,1:r)];
-    k = 1;
+    V = [zeros(start-1,r);V(:,1:r)];
+elseif strcmp(measure_method, 'E1') == 1
+ 	v1_size = size(v1,1);
+    lamda_zero = 0;
+    for i=1:v1_size
+    	if abs(v1(i)) < 1e-5
+    		lamda_zero = lamda_zero + 1;
+    	end
+    end
+    start = lamda_zero + 1;
+    U = (M - N).^2;
+    sumU = sum(U,2);
+    for i=1:nv
+        U(i,i) = sumU(i);
+    end
+    B = e1' * U * e1;
+    A = e1' * spdiags(sum(M,2),0, nv, nv) * e1;
+    B = B(start:v1_size, start:v1_size);
+    A = A(start:v1_size, start:v1_size);
+    [V, S] = eig(B, A);
+    [S, order] = sort(diag(S), 'descend');
+    V = V(:, order);
+    % r number of singular vectors and values to return.
+    r = min(r, size(V,2));
+    V = [zeros(start-1,r);V(:,1:r)];
+elseif strcmp(measure_method, 'E2') == 1    
+	v1_size = size(v1,1);
+    lamda_zero = 0;
+    for i=1:v1_size
+    	if abs(v1(i)) < 1e-5
+    		lamda_zero = lamda_zero + 1;
+    	end
+    end
+    start = lamda_zero + 1;
+    U = (M - N).^2;
+    sumU = sum(U,2);
+    U = -1 * U;
+    for i=1:nv
+        U(i,i) = sumU(i);
+    end
+    B = e1' * U * e1;
+    B = B(start:v1_size, start:v1_size);
+    [V, S] = eig(B);
+    [S, order] = sort(diag(S), 'descend');
+    V = V(:, order);
+    % r number of singular vectors and values to return.
+    r = min(r, size(V,2));
+    V = [zeros(start-1,r);V(:,1:r)];
+elseif strcmp(measure_method, 'E3') == 1
+ 	v1_size = size(v1,1);
+    lamda_zero = 0;
+    for i=1:v1_size
+    	if abs(v1(i)) < 1e-5
+    		lamda_zero = lamda_zero + 1;
+    	end
+    end
+    start = lamda_zero + 1;
+    B = e1' * (spdiags(sum(M,2),0, nv, nv) - spdiags(sum(N,2),0, nv, nv)).^2 * e1;
+    B = B(start:v1_size, start:v1_size);
+    [V, S] = eig(B);
+    [S, order] = sort(diag(S), 'descend');
+    V = V(:, order);
+    % r number of singular vectors and values to return.
+    r = min(r, size(V,2));
+    V = [zeros(start-1,r);V(:,1:r)];    
+elseif strcmp(measure_method, 'E4') == 1
+ 	v1_size = size(v1,1);
+    lamda_zero = 0;
+    for i=1:v1_size
+    	if abs(v1(i)) < 1e-5
+    		lamda_zero = lamda_zero + 1;
+    	end
+    end
+    start = lamda_zero + 1;
+    B = e1' * (spdiags(sum(M,2),0, nv, nv) - spdiags(sum(N,2),0, nv, nv)).^2 * e1;
+    A = e1' * spdiags(sum(M,2),0, nv, nv) * e1;
+    B = B(start:v1_size, start:v1_size);
+    A = A(start:v1_size, start:v1_size);
+    [V, S] = eig(B, A);
+    [S, order] = sort(diag(S), 'descend');
+    V = V(:, order);
+    % r number of singular vectors and values to return.
+    r = min(r, size(V,2));
+    V = [zeros(start-1,r);V(:,1:r)];    
 end
 % wh is the distortion values for each node based on using the highest singular values. 
 wh = e1*V(:,1:r);

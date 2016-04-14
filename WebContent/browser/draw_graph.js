@@ -142,7 +142,7 @@ function loadGraphFile(evt, svg, div_name) {
 			document.getElementById("k").max = Math.min(num_nodes, MAX_K);
 			// Set current values for k and measure.
 			//k = documentgetElementById("k").min;
-			k = Math.min(250, num_nodes);
+			k = Math.min(12, num_nodes);
 			measure = document.getElementById("measure_list").value;
 		};
 		reader.readAsText(file);
