@@ -200,8 +200,8 @@ public class MaxChangingRadiusCalculator {
     graphCalculator.readGraphs(inputFile1, inputFile2);
     // Calculate delta change for each node.
     graphCalculator.calculateDeltaGraph();
-    double step = 0.01;
-    double maxStep = 100;
+    double step = 0.1;
+    double maxStep = 10;
     int stepsNumber = 1;
     int numberOfNodes = graphCalculator.getGraph1().size();
     // Determine the threshold increase step size.
@@ -311,7 +311,7 @@ public class MaxChangingRadiusCalculator {
     String inputFile2 = scanner.nextLine();
     int regionNumber = 10;
     int nodesNumPerRegion = 16;
-    int runsNumber = 100;
+    int runsNumber = 10;
     MaxChangingRadiusCalculator calculator =
         new MaxChangingRadiusCalculator(inputFile1, inputFile2);
     calculator.run(regionNumber, nodesNumPerRegion);

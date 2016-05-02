@@ -11,7 +11,7 @@ var DIV_HEIGHT = 500; // Graph 1 and graph 2 div height.
 var GRAPH_SERVLET_URL = "http://localhost:8080/Dynamic_Graph_Visualization_Juno/GraphServlet?";
 var MAX_NUM_NODES = 50; // If the graph has nodes less than MAX_NUM_NODES, then
 // draw the whole graph.
-var MAX_K = 300; // Max value for the k parameter.
+var MAX_K = 1000; // Max value for the k parameter.
 var graph1_data; // Graph 1 content.
 var graph2_data; // Graph 2 content.
 var svg1; // Drawing object for graph 1.
@@ -142,7 +142,7 @@ function loadGraphFile(evt, svg, div_name) {
 			document.getElementById("k").max = Math.min(num_nodes, MAX_K);
 			// Set current values for k and measure.
 			//k = documentgetElementById("k").min;
-			k = Math.min(12, num_nodes);
+			k = Math.min(1000, num_nodes);
 			measure = document.getElementById("measure_list").value;
 		};
 		reader.readAsText(file);

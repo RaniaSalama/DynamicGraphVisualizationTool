@@ -290,6 +290,7 @@ public class GraphCalculator {
       nodes[index++] = node;
     }
     Arrays.sort(nodes, Collections.reverseOrder());
+   
     int position = 0;
     for (Node node1 : nodes) {
       position++;

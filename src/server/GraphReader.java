@@ -111,7 +111,7 @@ public class GraphReader {
           continue;
         }
         String[] neighborSplit = neighbor.split(":");
-        Node neighborNode = nodeMapping.get(neighborSplit[0]);
+        Node neighborNode = nodeMapping.get(Integer.parseInt(neighborSplit[0]));
         if (neighborNode == null) {
           // If the node mapping didn't contain this neighbor node ID before.
           neighborNode = new Node(0.0, Integer.parseInt(neighborSplit[0]));

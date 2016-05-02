@@ -7,9 +7,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
@@ -27,6 +31,7 @@ public class SpectralMethodRegionSelector {
   private double regionChangeValue;
   // Six evaluation measures used taking into account the region size.
   private double[] evaluationMeasures;
+  private ArrayList<Double[]> regionEvaluationMeasures;
   // Min delta change of a node.
   private double minDelta;
   // Max delta change of a node.
@@ -306,6 +311,68 @@ public class SpectralMethodRegionSelector {
   }
 
   /**
+   * Get the top-regionNum distortion regions.
+   * 
+   * @param regionNum Number of distortion regions to return.
+   * @param maxNodes Max number of nodes in each region.
+   * @param overlappingThreshold max overlapping in number of nodes between regions.
+   * @return HashMap<Integer, String[]> where the key is the region number and the values are String
+   *         array of edges in the following format (edge.source, edge.destination).
+   */
+  public HashMap<String, String[]> getRegionsExhastiveSearch(int regionNum, int maxNodes,
+      HashMap<Node, HashMap<Node, Integer>> graph1, HashMap<Node, HashMap<Node, Integer>> graph2,
+      HashMap<Integer, Node> node1Mapping, HashMap<Integer, Node> node2Mapping) {
+    ArrayList<SpectralRegion> regionsList = new ArrayList<SpectralRegion>();
+    // Nodes selected in any region.
+    for (int i = 0; i < nodesList.size(); i++) {
+      Node node = nodesList.get(i);
+      // Start BFS from node i.
+      HashMap<Node, HashSet<Node>> bfsGraph = BFSPriorityQueue(nodes.get(node.getId()), maxNodes);
+      if (bfsGraph.size() != maxNodes) { // Ensure that each returned region is exactly equal to the
+                                         // max nodes.
+        continue;
+      }
+      double distortionValue = 0;
+      double regionSizeGraph1 = 0;
+      double regionSizeGraph2 = 0;
+      for (Node bfsNode : bfsGraph.keySet()) {
+        distortionValue += bfsNode.getDelta();
+        HashMap<Node, Integer> bfsNodeNbrs1 = graph1.get(node1Mapping.get(bfsNode.getId()));
+        for (Node nbr1 : bfsNodeNbrs1.keySet()) {
+          if (bfsGraph.containsKey(node2Mapping.get(nbr1.getId()))) {
+            regionSizeGraph1++;
+          }
+        }
+        HashMap<Node, Integer> bfsNodeNbrs2 = graph2.get(node2Mapping.get(bfsNode.getId()));
+        for (Node nbr2 : bfsNodeNbrs2.keySet()) {
+          if (bfsGraph.containsKey(node2Mapping.get(nbr2.getId()))) {
+            regionSizeGraph2++;
+          }
+        }
+      }
+      distortionValue =
+          distortionValue
+              / (Math.min(Math.max(1, regionSizeGraph1), Math.max(1, regionSizeGraph2)));
+      SpectralRegion region = new SpectralRegion(bfsGraph, distortionValue, 0, bfsGraph.size());
+      regionsList.add(region);
+    }
+    // Sort the regions based on distortion values from the highest to the smallest.
+    Collections.sort(regionsList);
+    HashMap<String, String[]> regions = new HashMap<String, String[]>();
+    int index = 1; // Index of current region.
+    for (SpectralRegion region : regionsList) {
+      // Convert BFSgraph into edges array format.
+      String[] edges = convertGraphToArray(region.getNodes());
+      regions.put(index + " " + region.getDistortionValues(), edges);
+      index++;
+      if (index > regionNum) {
+        break;
+      }
+    }
+    return regions;
+  }
+
+  /**
    * Get subgraphs of graph 1 that correspond to same subgraphs in graph 2.
    * 
    * @param graph2Results region results of graph 2.
@@ -313,8 +380,10 @@ public class SpectralMethodRegionSelector {
    */
   public HashMap<Integer, String[]> getMapping(HashMap<Integer, String[]> graph2Results,
       HashMap<Node, HashMap<Node, Integer>> graph1, HashMap<Node, HashMap<Node, Integer>> graph2,
-      HashMap<Integer, Node> node2Mapping) {
+      HashMap<Integer, Node> node2Mapping, int regionMax) {
+    evaluationMeasures = new double[6];
     HashMap<Integer, String[]> graph1Results = new HashMap<Integer, String[]>();
+    int regionCount = 1;
     for (int region : graph2Results.keySet()) {
       String[] edges = graph2Results.get(region);
       // Retrieve the nodes that appeared in this subgraph2.
@@ -355,27 +424,134 @@ public class SpectralMethodRegionSelector {
           }
         }
       }
-      if (region == 1) { // We only take the highest region in each one of the singular vectors.
+      if (regionCount <= regionMax) { // We only take the highest region in each one of the singular
+                                      // vectors.
         regionChangeValue = distortionValue / graph2Nodes.size();
-        evaluationMeasures = new double[6];
-        evaluationMeasures[0] = distortionValue / Math.max(1, edgesWithinRegionInGraph1);
-        evaluationMeasures[1] = distortionValue / Math.max(1, edgesWithinRegionInGraph2);
-        evaluationMeasures[2] =
+        evaluationMeasures[0] += distortionValue / Math.max(1, edgesWithinRegionInGraph1);
+        evaluationMeasures[1] += distortionValue / Math.max(1, edgesWithinRegionInGraph2);
+        evaluationMeasures[2] +=
             distortionValue
                 / Math.min(Math.max(1, edgesWithinRegionInGraph1),
                     Math.max(1, edgesWithinRegionInGraph2));
-        evaluationMeasures[3] = distortionValue / Math.max(1, regionNodesDegreeInGraph1);
-        evaluationMeasures[4] = distortionValue / Math.max(1, regionNodesDegreeInGraph2);
-        evaluationMeasures[5] =
+        evaluationMeasures[3] += distortionValue / Math.max(1, regionNodesDegreeInGraph1);
+        evaluationMeasures[4] += distortionValue / Math.max(1, regionNodesDegreeInGraph2);
+        evaluationMeasures[5] +=
             distortionValue
                 / Math.min(Math.max(1, regionNodesDegreeInGraph1),
                     Math.max(1, regionNodesDegreeInGraph2));
+      } else {
+        break;
+      }
+      regionCount++;
+      // Convert to the array format.
+      String[] subGraphArray = convertGraphToArray(subgraph1);
+      graph1Results.put(region, subGraphArray);
+    }
+    return graph1Results;
+  }
+
+  /**
+   * Get subgraphs of graph 1 that correspond to same subgraphs in graph 2.
+   * 
+   * @param graph2Results region results of graph 2.
+   * @return corresponding subgraphs in graph 1.
+   */
+  public HashMap<Double, String[]> getMappingExhastiveSearch(
+      HashMap<Double, String[]> graph2Results, HashMap<Node, HashMap<Node, Integer>> graph1,
+      HashMap<Node, HashMap<Node, Integer>> graph2, HashMap<Integer, Node> node2Mapping, HashMap<Integer, Node> node1Mapping,
+      int regionMax, HashMap<Double, Double> grahResultMapping) {
+    evaluationMeasures = new double[6];
+    regionEvaluationMeasures = new ArrayList<Double[]>();
+    HashMap<Double, String[]> graph1Results = new HashMap<Double, String[]>();
+    // sort graph2results
+    List<Entry<Double, Double>> SortedGrahResultMapping = entriesSortedByValues(grahResultMapping);
+    int regionCount = 1;
+    for (Entry<Double, Double> regionPair : SortedGrahResultMapping) {
+      Double region = regionPair.getKey();
+      String[] edges = graph2Results.get(region);
+      // Retrieve the nodes that appeared in this subgraph2.
+      HashSet<Node> graph2Nodes = new HashSet<>();
+      for (String edge : edges) {
+        String[] edgeNodes = edge.split(",");
+        Node node1 = nodes.get(Integer.parseInt(edgeNodes[0]));
+        Node node2 = nodes.get(Integer.parseInt(edgeNodes[1]));
+        graph2Nodes.add(node1); 
+        graph2Nodes.add(node2);
+      }
+      // Construct the corresponding subgraph 1.
+      HashMap<Node, HashSet<Node>> subgraph1 = new HashMap<Node, HashSet<Node>>();
+      double distortionValue = 0.0;
+      double edgesWithinRegionInGraph1 = 0.0;
+      double edgesWithinRegionInGraph2 = 0.0;
+      double regionNodesDegreeInGraph1 = 0.0;
+      double regionNodesDegreeInGraph2 = 0.0;
+      for (Node node : graph2Nodes) {
+        // Get the nodes that are connected to this node in graph2.
+        
+        HashMap<Node, Integer> graph1Nodes = graph1.get(node1Mapping.get(node.getId()));
+        regionNodesDegreeInGraph1 += graph1Nodes.size();
+        HashMap<Node, Integer> graph2NodeNeibours = graph2.get(node2Mapping.get(node.getId()));
+        regionNodesDegreeInGraph2 += graph2NodeNeibours.size();
+        // Only keep nodes that appear in subgraph1.
+        HashSet<Node> subNodes = new HashSet<>();
+        for (Node graph1Node : graph1Nodes.keySet()) {
+          if (graph2Nodes.contains(graph1Node)) {
+            subNodes.add(graph1Node);
+            edgesWithinRegionInGraph1++;
+          }
+        }
+        subgraph1.put(node, subNodes);
+        distortionValue = distortionValue + node.getDelta();
+        for (Node graph2Node : graph2NodeNeibours.keySet()) {
+          if (graph2Nodes.contains(nodes.get(graph2Node.getId()))) {
+            edgesWithinRegionInGraph2++;
+          }
+        }
+      }
+      if (regionCount <= regionMax) { // We only take the highest region in each one of the singular
+                                      // vectors.
+        regionChangeValue = distortionValue / graph2Nodes.size();
+        Double[] measure = new Double[6];
+        measure[0] = distortionValue / Math.max(1, edgesWithinRegionInGraph1);
+        measure[1] = distortionValue / Math.max(1, edgesWithinRegionInGraph2);
+        measure[2] =
+            distortionValue
+                / Math.min(Math.max(1, edgesWithinRegionInGraph1),
+                    Math.max(1, edgesWithinRegionInGraph2));
+        measure[3] = distortionValue / Math.max(1, regionNodesDegreeInGraph1);
+        measure[4] = distortionValue / Math.max(1, regionNodesDegreeInGraph2);
+        measure[5] =
+            distortionValue
+                / Math.min(Math.max(1, regionNodesDegreeInGraph1),
+                    Math.max(1, regionNodesDegreeInGraph2));
+        for (int i = 0; i < measure.length; i++) {
+          evaluationMeasures[i] += measure[i];
+        }
+        regionEvaluationMeasures.add(measure);
+      }
+      regionCount++;
+      if (regionCount > regionMax) {
+        break;
       }
       // Convert to the array format.
       String[] subGraphArray = convertGraphToArray(subgraph1);
       graph1Results.put(region, subGraphArray);
     }
     return graph1Results;
+  }
+
+  static <K, V extends Comparable<? super V>> List<Entry<Double, Double>> entriesSortedByValues(Map<Double, Double> map) {
+
+    List<Entry<Double, Double>> sortedEntries = new ArrayList<Entry<Double, Double>>(map.entrySet());
+
+    Collections.sort(sortedEntries, new Comparator<Entry<Double, Double>>() {
+      @Override
+      public int compare(Entry<Double, Double> e1, Entry<Double, Double> e2) {
+        return  (e2.getValue().compareTo(e1.getValue()));
+      }
+    });
+
+    return sortedEntries;
   }
 
   /**
@@ -390,6 +566,7 @@ public class SpectralMethodRegionSelector {
   public void calculateDeltaGraph(HashMap<Node, HashMap<Node, Integer>> graph1,
       HashMap<Integer, Node> nodeMapping1, HashMap<Node, HashMap<Node, Integer>> graph2,
       HashMap<Integer, Node> nodeMapping2) {
+    int test = 0;
     for (Node node1 : graph1.keySet()) { // For each node in graph1.
       // Get the node neighbors.
       HashMap<Node, Integer> node1NeighborsInGraph1 = graph1.get(node1);
@@ -417,6 +594,7 @@ public class SpectralMethodRegionSelector {
         }
       }
       // Set the node delta change.
+      test = test + delta;
       node1.setDelta(delta);
       node2.setDelta(delta);
       minDelta = Math.min(node1.getDistortionValue(), minDelta);
@@ -429,7 +607,7 @@ public class SpectralMethodRegionSelector {
    * 
    * @param threshold to remove the nodes based on.
    */
-  public void removeNodesBelowThreshold(double step, int numberOfNodes, 
+  public void removeNodesBelowThreshold(double step, int numberOfNodes,
       HashMap<Node, HashMap<Node, Integer>> graph1, HashMap<Integer, Node> nodeMapping1,
       ArrayList<Node> nodeList1, HashMap<Node, HashMap<Node, Integer>> graph2,
       HashMap<Integer, Node> nodeMapping2, ArrayList<Node> nodeList2) {
@@ -438,7 +616,7 @@ public class SpectralMethodRegionSelector {
     graph1Nodes.addAll(graph1.keySet());
     Node[] nodes = new Node[graph1Nodes.size()];
     int index = 0;
-    for(Node node : graph1Nodes) {
+    for (Node node : graph1Nodes) {
       nodes[index++] = node;
     }
     Arrays.sort(nodes, Collections.reverseOrder());
@@ -450,39 +628,39 @@ public class SpectralMethodRegionSelector {
       }
       // Get the mapping of node1 in graph2.
       Node node2 = nodeMapping2.get(node1.getId());
-                                                    // nodes
-                                                    // below
-                                                    // the
-                                                    // threshold.
-        HashMap<Node, Integer> node1Nbrs = graph1.get(node1);
-        // Remove node1 from graph1.
-        graph1.remove(node1);
-        nodeMapping1.remove(node1.getId());
-        nodeList1.remove(node1);
-        // Remove node1 from nodes pointing to it in graph1.
-        for (Node node1Nbr : node1Nbrs.keySet()) {
-          HashMap<Node, Integer> node1NbrNbrs = graph1.get(node1Nbr);
-          if (node1NbrNbrs == null) {
-            continue;
-          }
-          node1NbrNbrs.remove(node1);
-          graph1.put(node1Nbr, node1NbrNbrs);
+      // nodes
+      // below
+      // the
+      // threshold.
+      HashMap<Node, Integer> node1Nbrs = graph1.get(node1);
+      // Remove node1 from graph1.
+      graph1.remove(node1);
+      nodeMapping1.remove(node1.getId());
+      nodeList1.remove(node1);
+      // Remove node1 from nodes pointing to it in graph1.
+      for (Node node1Nbr : node1Nbrs.keySet()) {
+        HashMap<Node, Integer> node1NbrNbrs = graph1.get(node1Nbr);
+        if (node1NbrNbrs == null) {
+          continue;
         }
-        HashMap<Node, Integer> node2Nbrs = graph2.get(node2);
-        // Remove node2 from graph2.
-        graph2.remove(node2);
-        nodeMapping2.remove(node2.getId());
-        nodeList2.remove(node2);
-        // Remove node2 from nodes pointing to it in graph2.
-        for (Node node2Nbr : node2Nbrs.keySet()) {
-          HashMap<Node, Integer> node2NbrNbrs = graph2.get(node2Nbr);
-          if (node2NbrNbrs == null) {
-            continue;
-          }
-          node2NbrNbrs.remove(node2);
-          graph2.put(node2Nbr, node2NbrNbrs);
-        }
+        node1NbrNbrs.remove(node1);
+        graph1.put(node1Nbr, node1NbrNbrs);
       }
+      HashMap<Node, Integer> node2Nbrs = graph2.get(node2);
+      // Remove node2 from graph2.
+      graph2.remove(node2);
+      nodeMapping2.remove(node2.getId());
+      nodeList2.remove(node2);
+      // Remove node2 from nodes pointing to it in graph2.
+      for (Node node2Nbr : node2Nbrs.keySet()) {
+        HashMap<Node, Integer> node2NbrNbrs = graph2.get(node2Nbr);
+        if (node2NbrNbrs == null) {
+          continue;
+        }
+        node2NbrNbrs.remove(node2);
+        graph2.put(node2Nbr, node2NbrNbrs);
+      }
+    }
   }
 
   /**
@@ -546,5 +724,9 @@ public class SpectralMethodRegionSelector {
    */
   public ArrayList<Node> getNodesList() {
     return nodesList;
+  }
+
+  public ArrayList<Double[]> getRegionMeasures() {
+    return regionEvaluationMeasures;
   }
 }

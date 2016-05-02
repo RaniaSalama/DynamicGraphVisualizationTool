@@ -36,12 +36,22 @@ e1 = e1(:,1:k);
 S = zeros(k, k);
 V = zeros(nv, k);
 if strcmp(measure_method, 'area-based') == 1
-    % V are the eigenvectors of e1'*G*e1.
-    % S are the eigenvalues of e1'*G*e1.  
-    %[V, S] = eig(e1'*G*e1, e1' * spdiags(sum(M,2), 0, nv, nv) * e1);
-    [V, S] = eig(e1'*G*e1);
+	v1_size = size(v1,1);
+    lamda_zero = 0;
+    for i=1:v1_size
+    	if abs(v1(i)) < 1e-5
+    		lamda_zero = lamda_zero + 1;
+    	end
+    end
+    start = lamda_zero + 1;
+    B = e1'*G*e1;
+    B = B(start:v1_size, start:v1_size);
+    [V, S] = eig(B);
     [S, order] = sort(diag(S),'descend');
     V = V(:,order);
+    % r number of singular vectors and values to return.
+    r = min(r, size(V,2));
+    V = [zeros(start-1,r);V(:,1:r)];
 elseif strcmp(measure_method, 'conformal-based') == 1
     v1_size = size(v1,1);
     lamda_zero = 0;

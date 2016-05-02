@@ -1,4 +1,5 @@
 package server;
+
 import java.util.HashSet;
 
 
@@ -111,6 +112,14 @@ public class Region implements Comparable<Region> {
     } else {
       return 1;
     }
+  }
+
+  public int sumNodeIDs(Region region) {
+    int sum = 0;
+    for (Node node : nodes) {
+      sum += node.getId();
+    }
+    return sum;
   }
 
 

@@ -182,8 +182,8 @@ public class TopChangingVerticesExhaustiveCalculator {
     graphCalculator.readGraphs(inputFile1, inputFile2);
     // Calculate delta change for each node.
     graphCalculator.calculateDeltaGraph();
-    double step = 0.01;
-    double maxStep = 100;
+    double step = 0.1;
+    double maxStep = 10;
     int stepsNumber = 0;
     int numberOfNodes = graphCalculator.getGraph1().size();
     while (stepsNumber < maxStep) {
