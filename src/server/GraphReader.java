@@ -9,14 +9,14 @@ public class GraphReader {
   // The adjacency list of the graph.
   private HashMap<Node, HashMap<Node, Integer>> graph;
   // Mapping between the node id and the node object.
-  private HashMap<Integer, Node> nodeMapping;
+  private HashMap<String, Node> nodeMapping;
 
   /**
    * Constructor initializes the graph and nodeMapping objects.
    */
   public GraphReader() {
     graph = new HashMap<Node, HashMap<Node, Integer>>();
-    nodeMapping = new HashMap<Integer, Node>();
+    nodeMapping = new HashMap<String, Node>();
   }
 
   /**
@@ -42,7 +42,7 @@ public class GraphReader {
    * 
    * @return the node mapping hash map.
    */
-  public HashMap<Integer, Node> getNodeMapping() {
+  public HashMap<String, Node> getNodeMapping() {
     return nodeMapping;
   }
 
@@ -51,7 +51,7 @@ public class GraphReader {
    * 
    * @param nodeMapping to set the hash map to.
    */
-  public void setNodeMapping(HashMap<Integer, Node> nodeMapping) {
+  public void setNodeMapping(HashMap<String, Node> nodeMapping) {
     this.nodeMapping = nodeMapping;
   }
   
@@ -64,15 +64,15 @@ public class GraphReader {
     for (int i = 0; i < graphArray.length; i++) {
       Node node1 = nodeMapping.get((int) graphArray[i][0]);
       if(node1 == null) {
-        node1 = new Node(0.0, (int)graphArray[i][0]);
+        node1 = new Node(0.0, graphArray[i][0]+"");
         graph.put(node1, new HashMap<Node, Integer> ());
-        nodeMapping.put((int)graphArray[i][0], node1);
+        nodeMapping.put(graphArray[i][0]+"", node1);
       }
       Node node2 = nodeMapping.get((int) graphArray[i][1]);
       if(node2 == null) {
-        node2 = new Node(0.0, (int)graphArray[i][1]);
+        node2 = new Node(0.0, graphArray[i][1]+"");
         graph.put(node2, new HashMap<Node, Integer> ());
-        nodeMapping.put((int)graphArray[i][1], node2);
+        nodeMapping.put(graphArray[i][1]+"", node2);
       }
       int edgeValue = (int) graphArray[i][2];
       graph.get(node1).put(node2, edgeValue);
@@ -93,7 +93,7 @@ public class GraphReader {
       // The line format is line for each node, as follows:
       // node_id,node_value,[neighbor_id:edge_value,..]
       String[] splits = line.trim().split("\\[");
-      int nodeID = Integer.parseInt(splits[0].split(",")[0]);
+      String nodeID = splits[0].split(",")[0];
       Node node = nodeMapping.get(nodeID);
       if (node == null) {
         // If the node mapping didn't contain this node ID before.
@@ -111,11 +111,11 @@ public class GraphReader {
           continue;
         }
         String[] neighborSplit = neighbor.split(":");
-        Node neighborNode = nodeMapping.get(Integer.parseInt(neighborSplit[0]));
+        Node neighborNode = nodeMapping.get(neighborSplit[0]);
         if (neighborNode == null) {
           // If the node mapping didn't contain this neighbor node ID before.
-          neighborNode = new Node(0.0, Integer.parseInt(neighborSplit[0]));
-          nodeMapping.put(Integer.parseInt(neighborSplit[0]), neighborNode);
+          neighborNode = new Node(0.0, neighborSplit[0]);
+          nodeMapping.put(neighborSplit[0], neighborNode);
         }
         // Add the neighbor to node neighbor hash map.
         neighborNodes.put(neighborNode, Integer.parseInt(neighborSplit[1]));

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Scanner;
 
 
 public class TopChangingVerticesCalculator {
@@ -135,14 +134,17 @@ public class TopChangingVerticesCalculator {
     graphCalculator.readGraphs(inputFile1, inputFile2);
     // Calculate delta change for each node.
     graphCalculator.calculateDeltaGraph();
+    System.out.println("Top Changing Vertcies BFS");
     ArrayList<HashSet<Node>> topChangingVertciesBFSRegions =
         getTopChangingVertcies(regionNumber, nodesNumPerRegion, 0, TraversalMethods.BFS);
     graphCalculator.evaluateEdges(topChangingVertciesBFSRegions);
     System.out.println("==============================================================");
+    System.out.println("Top Changing Vertcies Biased BFS");
     ArrayList<HashSet<Node>> topChangingVertciesBiasedBFSRegions =
         getTopChangingVertcies(regionNumber, nodesNumPerRegion, baisedk, TraversalMethods.BiasedBFS);
     graphCalculator.evaluateEdges(topChangingVertciesBiasedBFSRegions);
     System.out.println("==============================================================");
+    System.out.println("Top Changing Vertcies BFS with Priority Queue");
     ArrayList<HashSet<Node>> topChangingVertciesBFSPriorityQueueRegions =
         getTopChangingVertcies(regionNumber, nodesNumPerRegion, 0,
             TraversalMethods.BFSPriorityQueue);
@@ -186,8 +188,8 @@ public class TopChangingVerticesCalculator {
     // Get graph1 region.
     HashSet<Node> selectedNodes = topChangingVertciesBFSRegions.get(selectedRegion);
     HashMap<Node, HashMap<Node, Integer>> graph1Map = graphCalculator.getGraph1();
-    HashMap<Integer, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
-    HashMap<Integer, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
+    HashMap<String, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
+    HashMap<String, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
     ArrayList<String> graph1Region = new ArrayList<String>();
     for (Node node : selectedNodes) {
       HashMap<Node, Integer> neighborNodes = graph1Map.get(nodeMapping1.get(node.getId()));
@@ -241,16 +243,20 @@ public class TopChangingVerticesCalculator {
    * @throws IOException
    */
   public static void main(String[] args) throws IOException {
-    Scanner scanner = new Scanner(System.in);
-    String inputFile1 = scanner.nextLine();
-    String inputFile2 = scanner.nextLine();
-    int regionNumber = 10;
-    int nodesNumPerRegion = 16;
-    int baisedk = 5;
+    if(args.length < 5) {
+      System.out.println("Java -jar TopChangingVerticesCalculator.jar graph1File graph2File regionsNumber nodesNumPerRegion baisedk");
+      return;
+    }
+    //Scanner scanner = new Scanner(System.in);
+    String inputFile1 = args[0];
+    String inputFile2 = args[1];
+    int regionNumber = Integer.parseInt(args[2]); //10
+    int nodesNumPerRegion = Integer.parseInt(args[3]); //16
+    int baisedk = Integer.parseInt(args[4]); //5
     TopChangingVerticesCalculator calculator =
         new TopChangingVerticesCalculator(inputFile1, inputFile2);
     calculator.run(regionNumber, nodesNumPerRegion, baisedk);
-    scanner.close();
+    //scanner.close();
   }
 
 }

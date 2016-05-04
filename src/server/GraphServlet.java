@@ -10,7 +10,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Scanner;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,17 +35,17 @@ public class GraphServlet extends HttpServlet {
   // graph2 parameter key name.
   private static final String GRAPH2_PARAMATER_KEY = "graph2file";
   // Number of regions to calculate.
-  private static final int REGION_NUM = 10;
+  private static int REGION_NUM = 10;
   // Max number of nodes per region.
-  private static final int MAX_NODES = 16;
+  private static int MAX_NODES = 16;
   // Select the highest region from each one of the singular vectors.
-  private static final int REGION_SELECTOR = 1;
+  private static int REGION_SELECTOR = 1;
   // MATLAB file to run.
   private static final String MATLAB_FILE = "server/matlab/visualize_map.m";
   // Remove nodes with delta change below this threshold.
   private static final double DEFAULT_THRESHOLD = 0.0;
   // Biased k used in Biased BFS.
-  private final static int BIASEDK = 5;
+  private static int BIASEDK = 5;
   // basepath for storing the two graphs.
   private static String basePath = "";
   // proxy used to run MATLAB code.
@@ -223,7 +222,8 @@ public class GraphServlet extends HttpServlet {
     SpectralMethodRegionSelector regionsGraph1 = regions.get(0);
     SpectralMethodRegionSelector regionsGraph2 = regions.get(1);
     // Select top-region_num from graph2 results.
-    HashMap<Integer, String[]> graph2Results = regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES);
+    HashMap<Integer, String[]> graph2Results =
+        regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES, 2);
     // Select from graph1 same nodes as graph2 but with their new edges
     // in graph1.
     HashMap<Integer, String[]> graph1Results =
@@ -470,7 +470,7 @@ public class GraphServlet extends HttpServlet {
           SpectralMethodRegionSelector regionsGraph2 = regions.get(1);
           // Select top-region_num from graph2 results.
           HashMap<Integer, String[]> graph2Results =
-              regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES);
+              regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES, 2);
           // Select from graph1 same nodes as graph2 but with their new edges
           // in graph1.
           HashMap<Integer, String[]> graph1Results =
@@ -586,7 +586,7 @@ public class GraphServlet extends HttpServlet {
           SpectralMethodRegionSelector regionsGraph1 = regions.get(0);
           SpectralMethodRegionSelector regionsGraph2 = regions.get(1);
           HashMap<Integer, String[]> graph2Results =
-              regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES);
+              regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES, 2);
           // Select from graph1 same nodes as graph2 but with their new edges
           // in graph1.
           regionsGraph1.getMapping(graph2Results, regionsGraph1.getGraph(),
@@ -660,7 +660,7 @@ public class GraphServlet extends HttpServlet {
           SpectralMethodRegionSelector regionsGraph1 = regions.get(0);
           SpectralMethodRegionSelector regionsGraph2 = regions.get(1);
           HashMap<Integer, String[]> graph2Results =
-              regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES);
+              regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES, 2);
           // Select from graph1 same nodes as graph2 but with their new edges
           // in graph1.
           regionsGraph1.getMapping(graph2Results, regionsGraph1.getGraph(),
@@ -697,6 +697,13 @@ public class GraphServlet extends HttpServlet {
     reader2.close();
   }
 
+  public void runEvaluationsWithRespectToRegionSizeWithThresholdingAllBFSs(String inputFile1,
+      String inputFile2, double step, String method) throws IOException, URISyntaxException,
+      MatlabInvocationException, MatlabConnectionException {
+    runEvaluationsWithRespectToRegionSizeWithThresholding(inputFile1, inputFile2, step, method, 0);
+    runEvaluationsWithRespectToRegionSizeWithThresholding(inputFile1, inputFile2, step, method, 1);
+    runEvaluationsWithRespectToRegionSizeWithThresholding(inputFile1, inputFile2, step, method, 2);
+  }
 
   /**
    * Run spectral method using different values of k and report the one with maximum evaluation
@@ -705,14 +712,15 @@ public class GraphServlet extends HttpServlet {
    * @param inputFile1 graph1 input file.
    * @param inputFile2 graph2 input file.
    * @param runsNumber number of runs to choose the best threshold.
+   * @param bfsSelection 0 means BFS, 1 means Biased BFS and 2 means BFS with priority queue.
    * @throws IOException
    * @throws URISyntaxException
    * @throws MatlabInvocationException
    * @throws MatlabConnectionException
    */
   public void runEvaluationsWithRespectToRegionSizeWithThresholding(String inputFile1,
-      String inputFile2, double step, String method) throws IOException, URISyntaxException,
-      MatlabInvocationException, MatlabConnectionException {
+      String inputFile2, double step, String method, int bfsSelection) throws IOException,
+      URISyntaxException, MatlabInvocationException, MatlabConnectionException {
     double[] maxEvaluationMeasures = new double[6]; // Six evaluation measures.
     String[] maxEvaluationMeasuresString = new String[6]; // Evaluation measures string format.
     int[] maxEvaluationMeasuresK = new int[6]; // Value of k at the maximum evaluation measures.
@@ -722,14 +730,14 @@ public class GraphServlet extends HttpServlet {
     BufferedReader reader2 = new BufferedReader(new FileReader(inputFile2));
     runMatlabCode();
     double threshold = 0;
-    double maxThreshold = 0.1;
+    double maxThreshold = 1;
     graph1 = loadGraph(reader1.readLine());
     graph2 = loadGraph(reader2.readLine());
     while (threshold < maxThreshold) {
       System.out.println(threshold);
-      Loop: for (int k = 1; k <= Math.min(400, nodesNumber); k += 10) { // Loop over k values to
+      Loop: for (int k = 12; k <= Math.min(400, nodesNumber); k += 10) { // Loop over k values to
         // choose the best one.
-        System.out.println(k);
+        //System.out.println(k);
         try {
           double[] evaluationMeasuresSum = new double[6];
           String[] currentEvaluationMeasuresString = new String[6];
@@ -760,7 +768,7 @@ public class GraphServlet extends HttpServlet {
             SpectralMethodRegionSelector regionsGraph1 = regions.get(0);
             SpectralMethodRegionSelector regionsGraph2 = regions.get(1);
             HashMap<Integer, String[]> graph2Results =
-                regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES);
+                regionsGraph2.getRegions(REGION_SELECTOR, MAX_NODES, bfsSelection);
             // Select from graph1 same nodes as graph2 but with their new edges
             // in graph1.
             regionsGraph1.getMapping(graph2Results, regionsGraph1.getGraph(),
@@ -836,7 +844,8 @@ public class GraphServlet extends HttpServlet {
     SpectralMethodRegionSelector regionsGraph2Overall = null;
     while (threshold < maxThreshold) {
       System.out.println(threshold);
-      Loop: for (int k = 1000; k <= Math.min(2000, nodesNumber); k += 100) { // Loop over k values to
+      Loop: for (int k = 12; k <= Math.min(400, nodesNumber); k += 10) { // Loop over k values
+                                                                             // to
         // choose the best one.
         System.out.println(k);
         try {
@@ -963,20 +972,25 @@ public class GraphServlet extends HttpServlet {
    */
   public static void main(String[] args) throws MatlabInvocationException,
       MatlabConnectionException, URISyntaxException, IOException {
-    Scanner scanner = new Scanner(System.in);
+    if(args.length < 5) {
+      System.out.println("Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion");
+      return; 
+    }
+    // Scanner scanner = new Scanner(System.in);
     // Input file for graph1.
-    String inputFile1 = scanner.nextLine();
+    String inputFile1 = args[0];
     // Input file for graph2.
-    String inputFile2 = scanner.nextLine();
+    String inputFile2 = args[1];
     // Number of runs to choose the threshold.
     double step = 0.1;
-    String method = scanner.nextLine();
+    String method = args[2];
+    GraphServlet.REGION_NUM = Integer.parseInt(args[3]);
+    GraphServlet.MAX_NODES = Integer.parseInt(args[4]);
+    //GraphServlet.BIASEDK = Integer.parseInt(args[5]);
     GraphServlet servlet = new GraphServlet();
-    servlet.runEvaluationsWithRespectToRegionSizeWithThresholdingExhaustiveSearch(inputFile1,
-        inputFile2, step, method);
-    // servlet.runEvaluationsWithRespectToRegionSizeWithThresholding(inputFile1,
-    // inputFile2, step, method);
-    scanner.close();
+    servlet.runEvaluationsWithRespectToRegionSizeWithThresholdingAllBFSs(inputFile1, inputFile2, step,
+       method);
+    // scanner.close();
   }
 
 }

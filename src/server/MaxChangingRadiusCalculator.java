@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Scanner;
 
 public class MaxChangingRadiusCalculator {
 
@@ -97,9 +96,9 @@ public class MaxChangingRadiusCalculator {
     // Get graph1 adjacency list.
     HashMap<Node, HashMap<Node, Integer>> graph1 = graphCalculator.getGraph1();
     // Get graph2 node mapping.
-    HashMap<Integer, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
+    HashMap<String, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
     // Get graph1 node mapping.
-    HashMap<Integer, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
+    HashMap<String, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
     // If the region number is greater than the number of nodes, then
     // set the region number to the number of nodes in the graph.
     regionNumber = Math.min(regionNumber, graph2.size());
@@ -176,10 +175,12 @@ public class MaxChangingRadiusCalculator {
     graphCalculator.readGraphs(inputFile1, inputFile2);
     // Calculate delta change for each node.
     graphCalculator.calculateDeltaGraph();
+    System.out.println("Max Changing Raduis");
     ArrayList<HashSet<Node>> maxChangingRadiusRegions =
         getTopChangingRadius(regionNumber, nodesNumPerRegion);
     graphCalculator.evaluateEdges(maxChangingRadiusRegions);
     System.out.println("========================================");
+    System.out.println("Max Changing Radius While accounting for Region Size");
     ArrayList<HashSet<Node>> maxChangingRadiusWithRegionSizeRegions =
         getTopChangingRadiusWithRegionSize(regionNumber, nodesNumPerRegion);
     graphCalculator.evaluateEdges(maxChangingRadiusWithRegionSizeRegions);
@@ -194,7 +195,7 @@ public class MaxChangingRadiusCalculator {
    * @param runsNumber number of runs to do for choosing the best threshold.
    * @throws IOException
    */
-  public void runWithThresholding(int regionNumber, int nodesNumPerRegion, int runsNumber)
+  public void runWithThresholding(int regionNumber, int nodesNumPerRegion)
       throws IOException {
     // Read graph1 and graph2.
     graphCalculator.readGraphs(inputFile1, inputFile2);
@@ -218,7 +219,9 @@ public class MaxChangingRadiusCalculator {
       stepsNumber++;
     }
     // Print the best threshoding results of the two methods.
+    System.out.println("Max Changing Raduis + Thresholding");
     graphCalculator.printBestThresholdingValues(4);
+    System.out.println("Max Changing Radius While accounting for Region Size + Thresholding");
     graphCalculator.printBestThresholdingValues(5);
   }
 
@@ -251,8 +254,8 @@ public class MaxChangingRadiusCalculator {
     // Get graph1 region.
     HashSet<Node> selectedNodes = topChangingVertciesBFSRegions.get(selectedRegion);
     HashMap<Node, HashMap<Node, Integer>> graph1Map = graphCalculator.getGraph1();
-    HashMap<Integer, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
-    HashMap<Integer, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
+    HashMap<String, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
+    HashMap<String, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
     ArrayList<String> graph1Region = new ArrayList<String>();
     for (Node node : selectedNodes) {
       HashMap<Node, Integer> neighborNodes = graph1Map.get(nodeMapping1.get(node.getId()));
@@ -306,18 +309,21 @@ public class MaxChangingRadiusCalculator {
    * @throws IOException
    */
   public static void main(String[] args) throws IOException {
-    Scanner scanner = new Scanner(System.in);
-    String inputFile1 = scanner.nextLine();
-    String inputFile2 = scanner.nextLine();
-    int regionNumber = 10;
-    int nodesNumPerRegion = 16;
-    int runsNumber = 10;
+    //Scanner scanner = new Scanner(System.in);
+    if(args.length < 5) {
+      System.out.println("Java -jar MaxChangingRaduis.jar graph1File graph2File regionsNumber nodesNumPerRegion baisedk");
+      return;
+    }
+    String inputFile1 = args[0];
+    String inputFile2 = args[1];
+    int regionNumber = Integer.parseInt(args[2]);
+    int nodesNumPerRegion = Integer.parseInt(args[2]);
     MaxChangingRadiusCalculator calculator =
         new MaxChangingRadiusCalculator(inputFile1, inputFile2);
     calculator.run(regionNumber, nodesNumPerRegion);
     System.out.println("==================Run with Thresholding======================");
-    calculator.runWithThresholding(regionNumber, nodesNumPerRegion, runsNumber);
-    scanner.close();
+    calculator.runWithThresholding(regionNumber, nodesNumPerRegion);
+    //scanner.close();
   }
 
 }

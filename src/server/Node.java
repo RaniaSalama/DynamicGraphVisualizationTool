@@ -5,7 +5,7 @@ public class Node implements Comparable<Node> {
   // Distortion value calculated based on the spectral method.
   private double distortionValue = 0.0;
   // Node id.
-  private int id = 0;
+  private String id = "";
   // Delta change of the node based on the absolute difference between its edges in graph1 and
   // graph2.
   private double delta = 0.0;
@@ -16,7 +16,7 @@ public class Node implements Comparable<Node> {
    * @param distortionValue value of distortion for this node.
    * @param id node id.
    */
-  public Node(double distortionValue, int id) {
+  public Node(double distortionValue, String id) {
     this.distortionValue = distortionValue;
     this.id = id;
   }
@@ -57,7 +57,7 @@ public class Node implements Comparable<Node> {
    * 
    * @return node id.
    */
-  public int getId() {
+  public String getId() {
     return id;
   }
 
@@ -66,7 +66,7 @@ public class Node implements Comparable<Node> {
    * 
    * @param id to set the node id to.
    */
-  public void setId(int id) {
+  public void setId(String id) {
     this.id = id;
   }
 
@@ -91,7 +91,7 @@ public class Node implements Comparable<Node> {
    */
   @Override
   public int hashCode() {
-    return id;
+    return id.hashCode();
   }
 
   /**

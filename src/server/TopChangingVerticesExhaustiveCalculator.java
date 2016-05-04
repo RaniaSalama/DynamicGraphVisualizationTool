@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Scanner;
 
 
 public class TopChangingVerticesExhaustiveCalculator {
@@ -65,9 +64,9 @@ public class TopChangingVerticesExhaustiveCalculator {
     // Get graph1 adjacency list.
     HashMap<Node, HashMap<Node, Integer>> graph1 = graphCalculator.getGraph1();
     // Get graph2 node mapping.
-    HashMap<Integer, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
+    HashMap<String, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
     // Get graph1 node mapping.
-    HashMap<Integer, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
+    HashMap<String, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
     regionNumber = Math.min(regionNumber, graph2.size());
     Region[] regions = new Region[graph2.size()];
     int index = 0;
@@ -148,16 +147,19 @@ public class TopChangingVerticesExhaustiveCalculator {
     graphCalculator.readGraphs(inputFile1, inputFile2);
     // Calculate delta change for each node.
     graphCalculator.calculateDeltaGraph();
+    System.out.println("Top Changing Vertcies Exhaustive Search BFS");
     ArrayList<HashSet<Node>> bfsRegions =
         getTopChangingVertciesExhaustiveSearch(regionNumber, nodesNumPerRegion, 0,
             TraversalMethods.BFS);
     graphCalculator.evaluateEdges(bfsRegions);
     System.out.println("========================================");
+    System.out.println("Top Changing Vertcies Exhaustive Search Biased BFS");
     ArrayList<HashSet<Node>> biasedBFSRegions =
         getTopChangingVertciesExhaustiveSearch(regionNumber, nodesNumPerRegion, baisedk,
             TraversalMethods.BiasedBFS);
     graphCalculator.evaluateEdges(biasedBFSRegions);
     System.out.println("========================================");
+    System.out.println("Top Changing Vertcies Exhaustive Search BFS with Priority Queue");
     ArrayList<HashSet<Node>> bfsPriorityQueueRegions =
         getTopChangingVertciesExhaustiveSearch(regionNumber, nodesNumPerRegion, 0,
             TraversalMethods.BFSPriorityQueue);
@@ -176,8 +178,7 @@ public class TopChangingVerticesExhaustiveCalculator {
    * @param runsNumber number of runs to do for choosing the best threshold.
    * @throws IOException
    */
-  public void runWithThresholding(int regionNumber, int nodesNumPerRegion, int baisedk,
-      int runsNumber) throws IOException {
+  public void runWithThresholding(int regionNumber, int nodesNumPerRegion, int baisedk) throws IOException {
     // Read graph1 and graph2 data.
     graphCalculator.readGraphs(inputFile1, inputFile2);
     // Calculate delta change for each node.
@@ -204,8 +205,11 @@ public class TopChangingVerticesExhaustiveCalculator {
       stepsNumber++;
     }
     // Print the best threshoding results of the three methods.
+    System.out.println("Top Changing Vertcies Exhaustive Search BFS + Thresholding");
     graphCalculator.printBestThresholdingValues(1);
+    System.out.println("Top Changing Vertcies Exhaustive Search Biased BFS + Thresholding");
     graphCalculator.printBestThresholdingValues(2);
+    System.out.println("Top Changing Vertcies Exhaustive Search Prioirty Queue BFS + Thresholding");
     graphCalculator.printBestThresholdingValues(3);
 
   }
@@ -247,8 +251,8 @@ public class TopChangingVerticesExhaustiveCalculator {
     // Get graph1 region.
     HashSet<Node> selectedNodes = topChangingVertciesBFSRegions.get(selectedRegion);
     HashMap<Node, HashMap<Node, Integer>> graph1Map = graphCalculator.getGraph1();
-    HashMap<Integer, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
-    HashMap<Integer, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
+    HashMap<String, Node> nodeMapping1 = graphCalculator.getNodeMapping1();
+    HashMap<String, Node> nodeMapping2 = graphCalculator.getNodeMapping2();
     ArrayList<String> graph1Region = new ArrayList<String>();
     for (Node node : selectedNodes) {
       HashMap<Node, Integer> neighborNodes = graph1Map.get(nodeMapping1.get(node.getId()));
@@ -302,19 +306,22 @@ public class TopChangingVerticesExhaustiveCalculator {
    * @throws IOException
    */
   public static void main(String[] args) throws IOException {
-    Scanner scanner = new Scanner(System.in);
-    String inputFile1 = scanner.nextLine();
-    String inputFile2 = scanner.nextLine();
-    int regionNumber = 10;
-    int nodesNumPerRegion = 16;
-    int baisedk = 5;
-    int runsNumber = 100;
+    //Scanner scanner = new Scanner(System.in);
+    if(args.length < 5) {
+      System.out.println("Java -jar TopChangingVerticesExhaustiveSearchCalculator.jar graph1File graph2File regionsNumber nodesNumPerRegion baisedk");
+      return;
+    }
+    String inputFile1 = args[0];
+    String inputFile2 = args[1];
+    int regionNumber = Integer.parseInt(args[2]);
+    int nodesNumPerRegion = Integer.parseInt(args[3]);
+    int baisedk = Integer.parseInt(args[4]);
     TopChangingVerticesExhaustiveCalculator calculator =
         new TopChangingVerticesExhaustiveCalculator(inputFile1, inputFile2);
     calculator.run(regionNumber, nodesNumPerRegion, baisedk);
     System.out.println("==================Run with Thresholding======================");
-    calculator.runWithThresholding(regionNumber, nodesNumPerRegion, baisedk, runsNumber);
-    scanner.close();
+    calculator.runWithThresholding(regionNumber, nodesNumPerRegion, baisedk);
+    //scanner.close();
   }
 
 }

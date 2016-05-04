@@ -18,11 +18,11 @@ public class GraphCalculator {
   // graph1 adjacency list of graph 1.
   private HashMap<Node, HashMap<Node, Integer>> graph1;
   // nodeMapping1 contains the mapping between the node ID and the node object of graph 1.
-  private HashMap<Integer, Node> nodeMapping1;
+  private HashMap<String, Node> nodeMapping1;
   // graph2 adjacency list of graph 2.
   private HashMap<Node, HashMap<Node, Integer>> graph2;
   // nodeMapping2 contains the mapping between the node ID and the node object of graph 2.
-  private HashMap<Integer, Node> nodeMapping2;
+  private HashMap<String, Node> nodeMapping2;
   // Min delta value of a node.
   private double minDelta;
   // Max delta value of a node.
@@ -86,7 +86,7 @@ public class GraphCalculator {
    * 
    * @return graph1 node mapping.
    */
-  public HashMap<Integer, Node> getNodeMapping1() {
+  public HashMap<String, Node> getNodeMapping1() {
     return nodeMapping1;
   }
 
@@ -95,7 +95,7 @@ public class GraphCalculator {
    * 
    * @param nodeMapping1 graph1 node mapping.
    */
-  public void setNodeMapping1(HashMap<Integer, Node> nodeMapping1) {
+  public void setNodeMapping1(HashMap<String, Node> nodeMapping1) {
     this.nodeMapping1 = nodeMapping1;
   }
 
@@ -104,7 +104,7 @@ public class GraphCalculator {
    * 
    * @return graph2 node mapping.
    */
-  public HashMap<Integer, Node> getNodeMapping2() {
+  public HashMap<String, Node> getNodeMapping2() {
     return nodeMapping2;
   }
 
@@ -113,7 +113,7 @@ public class GraphCalculator {
    * 
    * @param nodeMapping2 graph2 node mapping.
    */
-  public void setNodeMapping2(HashMap<Integer, Node> nodeMapping2) {
+  public void setNodeMapping2(HashMap<String, Node> nodeMapping2) {
     this.nodeMapping2 = nodeMapping2;
   }
 

@@ -50,7 +50,7 @@ public class SpectralMethodRegionSelector {
     nodesList = new ArrayList<Node>();
     int index = 1;
     for (double distoritionValue : distortionValues) {
-      Node node = new Node(distoritionValue, index);
+      Node node = new Node(distoritionValue, index + "");
       nodes.put(index, node);
       nodesList.add(node);
       index++;
@@ -114,7 +114,7 @@ public class SpectralMethodRegionSelector {
    */
   public HashMap<Node, HashSet<Node>> BFS(Node n, int maxNodes) {
     HashMap<Node, HashSet<Node>> BFSGraph = new HashMap<Node, HashSet<Node>>();
-    HashSet<Integer> found = new HashSet<Integer>();
+    HashSet<String> found = new HashSet<String>();
     Queue<Node> queue = new LinkedList<Node>();
     queue.add(n);
     BFSGraph.put(n, new HashSet<Node>());
@@ -160,7 +160,7 @@ public class SpectralMethodRegionSelector {
    **/
   public HashMap<Node, HashSet<Node>> BFSBiased(Node n, int maxNodes) {
     HashMap<Node, HashSet<Node>> BFSGraph = new HashMap<Node, HashSet<Node>>();
-    HashSet<Integer> found = new HashSet<Integer>();
+    HashSet<String> found = new HashSet<String>();
     Queue<Node> queue = new LinkedList<Node>();
     queue.add(n);
     BFSGraph.put(n, new HashSet<Node>());
@@ -218,7 +218,7 @@ public class SpectralMethodRegionSelector {
    */
   public HashMap<Node, HashSet<Node>> BFSPriorityQueue(Node n, int maxNodes) {
     HashMap<Node, HashSet<Node>> BFSGraph = new HashMap<Node, HashSet<Node>>();
-    HashSet<Integer> found = new HashSet<Integer>();
+    HashSet<String> found = new HashSet<String>();
     PriorityQueue<Node> queue = new PriorityQueue<Node>();
     queue.add(n);
     BFSGraph.put(n, new HashSet<Node>());
@@ -282,10 +282,11 @@ public class SpectralMethodRegionSelector {
    * @param regionNum Number of distortion regions to return.
    * @param maxNodes Max number of nodes in each region.
    * @param overlappingThreshold max overlapping in number of nodes between regions.
+   * @param bfsSelection 0 means BFS, 1 means Biased BFS and 2 means BFS with priority queue.
    * @return HashMap<Integer, String[]> where the key is the region number and the values are String
    *         array of edges in the following format (edge.source, edge.destination).
    */
-  public HashMap<Integer, String[]> getRegions(int regionNum, int maxNodes) {
+  public HashMap<Integer, String[]> getRegions(int regionNum, int maxNodes, int bfsSelection) {
     HashMap<Integer, String[]> regions = new HashMap<Integer, String[]>();
     // Sort the nodes based on their distortion values descendingly.
     Collections.sort(nodesList);
@@ -294,7 +295,14 @@ public class SpectralMethodRegionSelector {
     for (int i = 0; i < nodesList.size(); i++) {
       Node node = nodesList.get(i);
       // Start BFS from node i.
-      HashMap<Node, HashSet<Node>> bfsGraph = BFSPriorityQueue(nodes.get(node.getId()), maxNodes);
+      HashMap<Node, HashSet<Node>> bfsGraph = null;
+      if (bfsSelection == 0) {
+        bfsGraph = BFS(nodes.get(node.getId()), maxNodes);
+      } else if (bfsSelection == 1) {
+        bfsGraph = BFSBiased(nodes.get(node.getId()), maxNodes);
+      } else {
+        bfsGraph = BFSPriorityQueue(nodes.get(node.getId()), maxNodes);
+      }
       if (bfsGraph.size() != maxNodes) { // Ensure that each returned region is exactly equal to the
                                          // max nodes.
         continue;
@@ -458,8 +466,8 @@ public class SpectralMethodRegionSelector {
    */
   public HashMap<Double, String[]> getMappingExhastiveSearch(
       HashMap<Double, String[]> graph2Results, HashMap<Node, HashMap<Node, Integer>> graph1,
-      HashMap<Node, HashMap<Node, Integer>> graph2, HashMap<Integer, Node> node2Mapping, HashMap<Integer, Node> node1Mapping,
-      int regionMax, HashMap<Double, Double> grahResultMapping) {
+      HashMap<Node, HashMap<Node, Integer>> graph2, HashMap<Integer, Node> node2Mapping,
+      HashMap<Integer, Node> node1Mapping, int regionMax, HashMap<Double, Double> grahResultMapping) {
     evaluationMeasures = new double[6];
     regionEvaluationMeasures = new ArrayList<Double[]>();
     HashMap<Double, String[]> graph1Results = new HashMap<Double, String[]>();
@@ -475,7 +483,7 @@ public class SpectralMethodRegionSelector {
         String[] edgeNodes = edge.split(",");
         Node node1 = nodes.get(Integer.parseInt(edgeNodes[0]));
         Node node2 = nodes.get(Integer.parseInt(edgeNodes[1]));
-        graph2Nodes.add(node1); 
+        graph2Nodes.add(node1);
         graph2Nodes.add(node2);
       }
       // Construct the corresponding subgraph 1.
@@ -487,7 +495,7 @@ public class SpectralMethodRegionSelector {
       double regionNodesDegreeInGraph2 = 0.0;
       for (Node node : graph2Nodes) {
         // Get the nodes that are connected to this node in graph2.
-        
+
         HashMap<Node, Integer> graph1Nodes = graph1.get(node1Mapping.get(node.getId()));
         regionNodesDegreeInGraph1 += graph1Nodes.size();
         HashMap<Node, Integer> graph2NodeNeibours = graph2.get(node2Mapping.get(node.getId()));
@@ -540,14 +548,16 @@ public class SpectralMethodRegionSelector {
     return graph1Results;
   }
 
-  static <K, V extends Comparable<? super V>> List<Entry<Double, Double>> entriesSortedByValues(Map<Double, Double> map) {
+  static <K, V extends Comparable<? super V>> List<Entry<Double, Double>> entriesSortedByValues(
+      Map<Double, Double> map) {
 
-    List<Entry<Double, Double>> sortedEntries = new ArrayList<Entry<Double, Double>>(map.entrySet());
+    List<Entry<Double, Double>> sortedEntries =
+        new ArrayList<Entry<Double, Double>>(map.entrySet());
 
     Collections.sort(sortedEntries, new Comparator<Entry<Double, Double>>() {
       @Override
       public int compare(Entry<Double, Double> e1, Entry<Double, Double> e2) {
-        return  (e2.getValue().compareTo(e1.getValue()));
+        return (e2.getValue().compareTo(e1.getValue()));
       }
     });
 
