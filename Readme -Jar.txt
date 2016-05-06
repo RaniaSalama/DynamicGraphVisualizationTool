@@ -1,4 +1,4 @@
-Go to cmd jars folder.
+Open command line and Go to "jars" folder.
 1- Top changing vertices and its variations:
 	Top Changing Vertices + BFS:
 		For each vertex, calculate the following change measure:
@@ -121,10 +121,11 @@ Go to cmd jars folder.
 		Instead of adding all the neighbors of node n to the BFS queue, node n sorts its neighbors according to their distortion measure from the highest to the lowest and only add the top k unvisited neighbors to the BFS queue (k was set to 5 in all of our experiments).
 	- Spectral method + BFS with priority queue:
 		Same as the spectral method with BFS, but instead of using a traditional queue, we use a priority queue, where the priority of the node is equal to its distortion value. The higher this distortion value, the higher the priority of the node. 
-	Before running each one of the previous methods, we used thresholding, where we sort the vertices from the smallest distortion value to the highest distortion value and then remove the top epson% vertices from the graph and run the rest of the algorithm. We have tried to run epson from 0 to 1 with an increase step of 0.1 and report espon that yields the highest evaluation measures. 	
+	- Thresholding:
+		Before running each one of the previous methods, we used thresholding, where we sort the vertices from the smallest distortion value to the highest distortion value and then remove the top epson% vertices from the graph and run the rest of the algorithm. We have tried to run epson from 0 to 1 with an increase step of 0.1 and report espon that yields the highest evaluation measures. 	
 	
 	To run spectral method and its variations, type the following:
-		Java -jar SpectralMethodWithThresholding.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion baisedk
+		Java -jar spectralMethod.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion MATLABFile
 		Where:
 			- graph1File is the file containing graph1 in the standard format, where edges are separated by '-' and each edge contains the id of the source node, id of the target node and weight of the edge separated by comma, for example:
 				1,2,3-2,1,3
@@ -149,16 +150,16 @@ Go to cmd jars folder.
 					Where d1(u) is the degree of vertex u in graph 1 and d2(u) is the degree of vertex u in graph 2. 
 			- regionsNumber is the number of regions to detect
 			- nodesNumPerRegion is the number of nodes per region
-			- baisedk is a parameter used in Top Changing Vertices + Biased BFS	
+			- MATLABFile is the path to the matlab file "visualize_map.m", which is stored in "src\server\matlab"
 	
 	Example:
-		Java -jar SpectralMethodWithThresholding.jar "data\Spectral Method Format\graph_1_japan.txt" "data\Spectral Method Format\graph_2_north_africa.txt" "conformal-based" 10 16 5
+		Java -jar spectralMethod.jar "data\Spectral Method Format\graph_1_japan.txt" "data\Spectral Method Format\graph_2_north_africa.txt" "conformal-based" 10 16 "C:\Users\User\Documents\Dynamic Graphs\DynamicGraphVisualizationTool-master\DynamicGraphVisualizationTool-master\src\server\matlab"
 
 5- Spectral Method from every vertex: (MATLAB installation is needed)
 		Start from every vertex using the colors provided by the first singular vector and get the top changing 10 regions using it (the ones that have the highest distortion values, which is calculated as = (sum_u \delta(u) / 	(min(region_size_in_graph1, region_size_in_graph2))) and then start from every vertex using the colors provided by the second singular vector and get the top changing 10 regions. Finally, end up with 100 regions (10 from each one of the singular vector), then sort them and choose the top 10 changing regions as the finally selected ones. BFS with priority queue is used in this setting.
 		
-		To run spectral method and its variations, type the following:
-			Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion
+		To run spectral method, type the following:
+			Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion MatlabFile
 			Where:
 				- graph1File is the file containing graph1 in the standard format, where edges are separated by '-' and each edge contains the id of the source node, id of the target node and weight of the edge separated by comma, for example:
 				1,2,3-2,1,3
@@ -183,6 +184,7 @@ Go to cmd jars folder.
 						Where d1(u) is the degree of vertex u in graph 1 and d2(u) is the degree of vertex u in graph 2. 
 				- regionsNumber is the number of regions to detect
 				- nodesNumPerRegion is the number of nodes per region
+				- MATLABFile is the path to the matlab file "visualize_map.m", which is stored in "src\server\matlab"
 		
 		Example:
-			Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar "data\Spectral Method Format\graph_1_japan.txt" "data\Spectral Method Format\graph_2_north_africa.txt" "conformal-based" 10 16
+			Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar "data\Spectral Method Format\graph_1_japan.txt" "data\Spectral Method Format\graph_2_north_africa.txt" "conformal-based" 10 16 "C:\Users\User\Documents\Dynamic Graphs\DynamicGraphVisualizationTool-master\DynamicGraphVisualizationTool-master\src\server\matlab"

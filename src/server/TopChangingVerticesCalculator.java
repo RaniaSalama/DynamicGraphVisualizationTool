@@ -194,11 +194,10 @@ public class TopChangingVerticesCalculator {
     for (Node node : selectedNodes) {
       HashMap<Node, Integer> neighborNodes = graph1Map.get(nodeMapping1.get(node.getId()));
       if (neighborNodes == null) {
-        continue;
-      }
+    	  neighborNodes = new HashMap<Node, Integer>();      }
       for (Node neighborNode : neighborNodes.keySet()) {
         if (selectedNodes.contains(nodeMapping2.get(neighborNode.getId()))) {
-          graph1Region.add(node.getId() + "," + neighborNode.getId());
+          graph1Region.add((int)Double.parseDouble(node.getId()) + "," + (int)Double.parseDouble(neighborNode.getId()));
         }
       }
     }
@@ -208,11 +207,11 @@ public class TopChangingVerticesCalculator {
     for (Node node : selectedNodes) {
       HashMap<Node, Integer> neighborNodes = graph2Map.get(node);
       if (neighborNodes == null) {
-        continue;
+    	  neighborNodes = new HashMap<Node, Integer>();
       }
       for (Node neighborNode : neighborNodes.keySet()) {
         if (selectedNodes.contains(neighborNode)) {
-          graph2Region.add(node.getId() + "," + neighborNode.getId());
+          graph2Region.add((int)Double.parseDouble(node.getId()) + "," + (int) Double.parseDouble(neighborNode.getId()));
         }
       }
     }

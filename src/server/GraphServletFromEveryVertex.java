@@ -41,7 +41,7 @@ public class GraphServletFromEveryVertex extends HttpServlet {
   // Select the highest region from each one of the singular vectors.
   private static int REGION_SELECTOR = 10;
   // MATLAB file to run.
-  private static final String MATLAB_FILE = "server/matlab/visualize_map.m";
+  private static String MATLAB_FILE = "server/matlab/visualize_map.m";
   // Remove nodes with delta change below this threshold.
   private static final double DEFAULT_THRESHOLD = 0.0;
   // Biased k used in Biased BFS.
@@ -74,6 +74,39 @@ public class GraphServletFromEveryVertex extends HttpServlet {
     super();
     runMatlabCode();
   }
+	/**
+	 * Servlet constructor initializes the MATLAB proxy and sets the MATLAB
+	 * path.
+	 * 
+	 * @throws MatlabConnectionException
+	 * @throws URISyntaxException.
+	 */
+	public GraphServletFromEveryVertex(String MATLABPath) throws MatlabConnectionException,
+			URISyntaxException {
+		super();
+		GraphServletFromEveryVertex.MATLAB_FILE = MATLABPath;
+		runMatlabCodeFromCMD(MATLABPath);
+	}
+
+	/**
+	 * runMatlabCode initializes the MATLAB proxy and sets the basepath to
+	 * MATLAB code path.
+	 * 
+	 * @throws MatlabConnectionException.
+	 * @throws URISyntaxException.
+	 */
+	public void runMatlabCodeFromCMD(String MATLABPath)
+			throws MatlabConnectionException, URISyntaxException {
+		if (proxy == null) { // Initialize MATLAB proxy.
+			MatlabProxyFactoryOptions options = new MatlabProxyFactoryOptions.Builder()
+					.setUsePreviouslyControlledSession(true).setHidden(true)
+					.setMatlabLocation(null).build();
+			proxy = new MatlabProxyFactory(options).getProxy();
+		}
+		System.out.println("MATLAB PATH = " + MATLABPath);
+		// Set the basepath to the MATLAB code path.
+		basePath = MATLABPath;
+	}
 
   /**
    * Get biasedk value.
@@ -835,7 +868,7 @@ public class GraphServletFromEveryVertex extends HttpServlet {
                                                              // evaluation measures.
     BufferedReader reader1 = new BufferedReader(new FileReader(inputFile1));
     BufferedReader reader2 = new BufferedReader(new FileReader(inputFile2));
-    runMatlabCode();
+    runMatlabCodeFromCMD(GraphServletFromEveryVertex.MATLAB_FILE);
     double threshold = 0;
     double maxThreshold = 1;
     graph1 = loadGraph(reader1.readLine());
@@ -973,7 +1006,7 @@ public class GraphServletFromEveryVertex extends HttpServlet {
   public static void main(String[] args) throws MatlabInvocationException,
       MatlabConnectionException, URISyntaxException, IOException {
     if(args.length < 5) {
-      System.out.println("Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion");
+      System.out.println("Java -jar spectralMethodWithThresholdingExhaustiveSearch.jar graph1File graph2File energyFunction regionsNumber nodesNumPerRegion MatlabFile");
       return; 
     }
     // Scanner scanner = new Scanner(System.in);
@@ -987,7 +1020,7 @@ public class GraphServletFromEveryVertex extends HttpServlet {
     GraphServletFromEveryVertex.REGION_NUM = Integer.parseInt(args[3]);
     GraphServletFromEveryVertex.MAX_NODES = Integer.parseInt(args[4]);
     //GraphServlet.BIASEDK = Integer.parseInt(args[5]);
-    GraphServletFromEveryVertex servlet = new GraphServletFromEveryVertex();
+    GraphServletFromEveryVertex servlet = new GraphServletFromEveryVertex(args[5]);
     servlet.runEvaluationsWithRespectToRegionSizeWithThresholdingExhaustiveSearch(inputFile1,
      inputFile2, step, method);
     //servlet.runEvaluationsWithRespectToRegionSizeWithThresholdingAllBFSs(inputFile1, inputFile2, step,

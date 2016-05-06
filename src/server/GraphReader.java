@@ -62,13 +62,13 @@ public class GraphReader {
    */
   public void loadGraphArray(double[][] graphArray) {
     for (int i = 0; i < graphArray.length; i++) {
-      Node node1 = nodeMapping.get((int) graphArray[i][0]);
+      Node node1 = nodeMapping.get(graphArray[i][0]+"");
       if(node1 == null) {
         node1 = new Node(0.0, graphArray[i][0]+"");
         graph.put(node1, new HashMap<Node, Integer> ());
         nodeMapping.put(graphArray[i][0]+"", node1);
       }
-      Node node2 = nodeMapping.get((int) graphArray[i][1]);
+      Node node2 = nodeMapping.get(graphArray[i][1]+"");
       if(node2 == null) {
         node2 = new Node(0.0, graphArray[i][1]+"");
         graph.put(node2, new HashMap<Node, Integer> ());

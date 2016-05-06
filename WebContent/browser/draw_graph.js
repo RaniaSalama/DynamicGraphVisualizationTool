@@ -96,9 +96,9 @@ function loadGraphFile(evt, svg, div_name) {
 				var node = nodes[i].split('[');
 				var node_attributes = node[0].split(',');
 				var node_id = node_attributes[0];
-				var trunk_amount = 2; // Always remove ]\r.
-				if (i == nodes.length - 1)
-					trunk_amount = 1; // Last line just remove ].
+				var trunk_amount = 1; // Always remove ]\r.
+				//if (i == nodes.length - 1)
+					//trunk_amount = 1; // Last line just remove ].
 				var node_links = node[1].substring(0,
 						node[1].length - trunk_amount).split(',');
 				var system_node_id = user_to_system_ids_mapping[node_id];
@@ -142,7 +142,7 @@ function loadGraphFile(evt, svg, div_name) {
 			document.getElementById("k").max = Math.min(num_nodes, MAX_K);
 			// Set current values for k and measure.
 			//k = documentgetElementById("k").min;
-			k = Math.min(1000, num_nodes);
+			k = Math.min(344, num_nodes);
 			measure = document.getElementById("measure_list").value;
 		};
 		reader.readAsText(file);

@@ -232,8 +232,14 @@ public class GraphCalculator {
   public void calculateDeltaGraph() {
     for (Node node1 : graph1.keySet()) {
       HashMap<Node, Integer> node1NeighborsInGraph1 = graph1.get(node1);
+      if(node1NeighborsInGraph1 == null) {
+    	  node1NeighborsInGraph1 = new HashMap<Node, Integer>();
+      }
       Node node2 = nodeMapping2.get(node1.getId());
       HashMap<Node, Integer> node1NeighborsInGraph2 = graph2.get(node2);
+      if(node1NeighborsInGraph2 == null) {
+    	  node1NeighborsInGraph2 = new HashMap<Node, Integer>();
+      }
       int delta = 0; // delta change of node 1.
       for (Node node1NeighborInGraph1 : node1NeighborsInGraph1.keySet()) {
         // Get the weight of this edge in graph 1.

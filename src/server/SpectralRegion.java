@@ -6,7 +6,7 @@ import java.util.HashSet;
 public class SpectralRegion implements Comparable<SpectralRegion> {
 
   // Nodes in the region.
-  private HashMap<Node, HashSet<Node>> nodes;
+  private HashMap<SpectralNode, HashSet<SpectralNode>> nodes;
   // Distortion value of the region.
   private double distortionValue;
   // Radius of the region.
@@ -58,7 +58,7 @@ public class SpectralRegion implements Comparable<SpectralRegion> {
    * @param radius of the region.
    * @param regionSize size of the region.
    */
-  public SpectralRegion(HashMap<Node, HashSet<Node>> nodes, double distortionValue, int radius, int regionSize) {
+  public SpectralRegion(HashMap<SpectralNode, HashSet<SpectralNode>> nodes, double distortionValue, int radius, int regionSize) {
     this.nodes = nodes;
     this.distortionValue = distortionValue;
     this.radius = radius;
@@ -70,7 +70,7 @@ public class SpectralRegion implements Comparable<SpectralRegion> {
    * 
    * @return nodes of the region.
    */
-  public HashMap<Node, HashSet<Node>> getNodes() {
+  public HashMap<SpectralNode, HashSet<SpectralNode>> getNodes() {
     return nodes;
   }
 
@@ -79,7 +79,7 @@ public class SpectralRegion implements Comparable<SpectralRegion> {
    * 
    * @param nodes of the region.
    */
-  public void setNodes(HashMap<Node, HashSet<Node>> nodes) {
+  public void setNodes(HashMap<SpectralNode, HashSet<SpectralNode>> nodes) {
     this.nodes = nodes;
   }
 
